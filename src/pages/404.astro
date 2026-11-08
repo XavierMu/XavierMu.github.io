@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="404 · 页面不存在" description="你要找的页面不存在。">
+  <div class="container notfound">
+    <p class="code mono faint">404</p>
+    <h1 class="title">页面不存在</h1>
+    <p class="muted">链接可能已失效，或者这个页面还没写。</p>
+    <p class="links">
+      <a href="/" class="plain">返回首页</a>
+      <span class="sep faint">/</span>
+      <a href="/blog" class="plain">看看文章</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  .notfound {
+    padding-block: var(--space-6);
+    text-align: center;
+  }
+
+  .code {
+    font-size: var(--text-sm);
+    letter-spacing: 0.2em;
+    margin-bottom: var(--space-2);
+  }
+
+  .title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .links {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+
+  .sep {
+    margin-inline: 0.8em;
+  }
+</style>

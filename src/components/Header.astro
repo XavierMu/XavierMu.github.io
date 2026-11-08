@@ -1,0 +1,157 @@
+---
+import { site } from '../data/site';
+import Icon from './Icon.astro';
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+
+/** 判断导航项是否激活：/blog 及其子路径都算 */
+function isActive(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  return currentPath === href || currentPath.startsWith(href + '/');
+}
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="brand plain" aria-label={`${site.title} 首页`}>
+      {site.hero.title}
+    </a>
+
+    <nav class="nav" aria-label="主导航">
+      {
+        site.nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={['nav-link', 'plain', { active: isActive(item.href) }]}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+      <button
+        id="theme-toggle"
+        class="theme-toggle"
+        type="button"
+        aria-label="切换深色模式"
+        title="切换深色模式"
+      >
+        <span class="icon-sun"><Icon name="sun" size={16} /></span>
+        <span class="icon-moon"><Icon name="moon" size={16} /></span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: 64px;
+  }
+
+  .brand {
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    flex-shrink: 0;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .nav-link {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+    padding-block: 0.25em;
+  }
+
+  .nav-link:hover {
+    color: var(--fg);
+  }
+
+  .nav-link.active {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .theme-toggle {
+    background: none;
+    border: 0;
+    padding: 0.35em;
+    cursor: pointer;
+    color: var(--fg-muted);
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius);
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .theme-toggle:hover {
+    color: var(--fg);
+    background: var(--bg-subtle);
+  }
+
+  .icon-sun,
+  .icon-moon {
+    display: grid;
+    place-items: center;
+    grid-area: 1 / 1;
+  }
+
+  /* 默认浅色：显示月亮（点击进入深色） */
+  .icon-sun {
+    display: none;
+  }
+
+  :global([data-theme='dark']) .icon-sun {
+    display: grid;
+  }
+
+  :global([data-theme='dark']) .icon-moon {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .icon-sun {
+      display: grid;
+    }
+    :global(:root:not([data-theme='light'])) .icon-moon {
+      display: none;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .header-inner {
+      height: 56px;
+    }
+    .nav {
+      gap: var(--space-2);
+    }
+    .nav-link {
+      font-size: var(--text-xs);
+    }
+  }
+</style>

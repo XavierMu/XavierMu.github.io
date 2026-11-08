@@ -1,0 +1,101 @@
+/* ==========================================================================
+   设计变量 —— 极简黑白灰
+   所有颜色、字号、间距集中在此，改主题只改这一个文件。
+   ========================================================================== */
+
+:root {
+  /* ---------- 颜色：浅色 ---------- */
+  --bg: #fdfdfc;
+  --bg-subtle: #f6f5f3;
+  --fg: #1a1a1a;
+  --fg-muted: #6b6b6b;
+  --fg-faint: #9e9e9e;
+  --line: #e5e4e2;
+  --line-strong: #d0cfcc;
+  --accent: #1a1a1a;
+
+  /* 代码块 */
+  --code-bg: #f6f5f3;
+  --code-border: #e8e7e4;
+
+  /* ---------- 字体 ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SF Mono", Consolas,
+    "Liberation Mono", monospace;
+
+  /* ---------- 字号：1.25 倍率 ---------- */
+  --text-xs: 0.75rem;    /* 12px 日期、图注 */
+  --text-sm: 0.875rem;   /* 14px 辅助信息 */
+  --text-base: 1rem;     /* 16px 正文 */
+  --text-lg: 1.25rem;    /* 20px 小标题 */
+  --text-xl: 1.5625rem;  /* 25px 区块标题 */
+  --text-2xl: 1.9375rem; /* 31px 页面标题 */
+  --text-3xl: 2.4375rem; /* 39px 首屏标题 */
+
+  /* ---------- 行高 ---------- */
+  --leading-body: 1.75;
+  --leading-tight: 1.3;
+  --leading-heading: 1.25;
+
+  /* ---------- 间距：8px 基准 ---------- */
+  --space-1: 0.5rem;   /* 8 */
+  --space-2: 1rem;     /* 16 */
+  --space-3: 1.5rem;   /* 24 */
+  --space-4: 2.5rem;   /* 40 */
+  --space-5: 4rem;     /* 64 */
+  --space-6: 6rem;     /* 96 */
+
+  /* ---------- 尺寸 ---------- */
+  --width-container: 1080px;
+  /* 正文列：容器内宽 1000px - 右栏 200px - 间距 48px = 752px */
+  --width-prose: 68ch;
+  /* 详情页（文章/项目/关于）共用的栅格：正文 + 右栏 */
+  --width-aside: 200px;
+  --gap-aside: var(--space-4);
+  --radius: 4px;
+  --radius-code: 6px;
+
+  /* ---------- 动效 ---------- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration: 150ms;
+
+  color-scheme: light;
+}
+
+/* ---------- 颜色：深色 ---------- */
+/* 支持手动切换（data-theme）与系统偏好两种入口 */
+[data-theme='dark'] {
+  --bg: #121212;
+  --bg-subtle: #1a1a1a;
+  --fg: #e8e6e3;
+  --fg-muted: #9a9a9a;
+  --fg-faint: #6a6a6a;
+  --line: #2a2a2a;
+  --line-strong: #3a3a3a;
+  --accent: #e8e6e3;
+
+  --code-bg: #1a1a1a;
+  --code-border: #2a2a2a;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #121212;
+    --bg-subtle: #1a1a1a;
+    --fg: #e8e6e3;
+    --fg-muted: #9a9a9a;
+    --fg-faint: #6a6a6a;
+    --line: #2a2a2a;
+    --line-strong: #3a3a3a;
+    --accent: #e8e6e3;
+
+    --code-bg: #1a1a1a;
+    --code-border: #2a2a2a;
+
+    color-scheme: dark;
+  }
+}

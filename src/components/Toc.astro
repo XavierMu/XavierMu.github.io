@@ -1,0 +1,153 @@
+---
+/**
+ * 文章目录（TOC）
+ *
+ * 从已渲染的正文 HTML 中提取 h2，生成锚点导航。
+ * 滚动高亮由内联脚本用 IntersectionObserver 完成。
+ */
+export interface TocItem {
+  id: string;
+  text: string;
+}
+
+interface Props {
+  items: TocItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <nav class="toc" aria-labelledby="toc-heading">
+      <p class="toc-heading" id="toc-heading">目录</p>
+      <ul class="toc-list">
+        {items.map((item) => (
+          <li>
+            <a href={`#${item.id}`} class="toc-link" data-toc-target={item.id}>
+              {item.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  // 滚动高亮：只观察正文里的 h2
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-toc-target]');
+  if (links.length > 0) {
+    const map = new Map<string, HTMLAnchorElement>();
+    links.forEach((a) => map.set(a.dataset.tocTarget!, a));
+
+    const headings = [...map.keys()]
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    let active: HTMLAnchorElement | null = null;
+    const setActive = (id: string) => {
+      const next = map.get(id);
+      if (!next || next === active) return;
+      active?.classList.remove('is-active');
+      next.classList.add('is-active');
+      active = next;
+    };
+
+    // 当前可视区内最靠上的标题优先
+    const visible = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const id = e.target.id;
+          if (!id) continue;
+          if (e.isIntersecting) visible.add(id);
+          else visible.delete(id);
+        }
+
+        if (visible.size > 0) {
+          // 按文档顺序取第一个可见标题
+          for (const h of headings) {
+            if (visible.has(h.id)) {
+              setActive(h.id);
+              return;
+            }
+          }
+        } else {
+          // 全部滚出视口时：取最后一个已经滚过去的标题
+          let last: string | null = null;
+          for (const h of headings) {
+            if (h.getBoundingClientRect().top < 120) last = h.id;
+          }
+          if (last) setActive(last);
+        }
+      },
+      { rootMargin: '-80px 0px -70% 0px', threshold: 0 }
+    );
+
+    headings.forEach((h) => observer.observe(h));
+
+    // 首屏初始化：若还没有任何高亮，选中当前视口内最靠上的标题
+    const initActive = () => {
+      if (document.querySelector('.toc-link.is-active')) return;
+      let pick: string | null = null;
+      for (const h of headings) {
+        const top = h.getBoundingClientRect().top;
+        // 位于导航下方、视口内
+        if (top >= 0 && top < window.innerHeight * 0.7) {
+          pick = h.id;
+          break;
+        }
+      }
+      if (pick) setActive(pick);
+      else if (headings[0]) setActive(headings[0].id);
+    };
+
+    initActive();
+    window.addEventListener('load', initActive, { once: true });
+  }
+</script>
+
+<style>
+  .toc {
+    font-size: var(--text-sm);
+  }
+
+  .toc-heading {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--fg-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-2);
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.32em 0 0.32em 0.9em;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    color: var(--fg-muted);
+    text-decoration: none;
+    line-height: 1.5;
+    transition: color var(--duration) var(--ease),
+      border-color var(--duration) var(--ease);
+  }
+
+  .toc-link:hover {
+    color: var(--fg);
+  }
+
+  .toc-link.is-active {
+    color: var(--fg);
+    border-left-color: var(--fg);
+  }
+</style>

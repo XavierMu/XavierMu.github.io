@@ -1,0 +1,104 @@
+---
+/**
+ * 文章列表项。紧凑的「日期 + 标题 + 摘要」结构，不用卡片。
+ */
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  showDescription?: boolean;
+}
+
+const { post, showDescription = true } = Astro.props;
+const { title, description, pubDate, draft } = post.data;
+const slug = post.id.replace(/\.(md|mdx)$/, '');
+
+const dateStr = pubDate.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: 'Asia/Shanghai',
+}).replace(/\//g, '.');
+---
+
+<article class="post-item">
+  <a href={`/blog/${slug}`} class="post-link plain">
+    <time class="post-date mono" datetime={pubDate.toISOString()}>{dateStr}</time>
+    <div class="post-content">
+      <h2 class="post-title">
+        {title}
+        {draft && <span class="draft-badge">草稿</span>}
+      </h2>
+      {showDescription && description && <p class="post-desc muted">{description}</p>}
+    </div>
+  </a>
+</article>
+
+<style>
+  .post-item {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .post-item:first-child {
+    border-top: 1px solid var(--line);
+  }
+
+  .post-link {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    align-items: baseline;
+    transition: opacity var(--duration) var(--ease);
+  }
+
+  .post-link:hover .post-title {
+    color: var(--fg-muted);
+  }
+
+  .post-date {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    white-space: nowrap;
+    padding-top: 0.35em;
+  }
+
+  .post-title {
+    font-size: var(--text-lg);
+    font-weight: 500;
+    font-family: var(--font-sans);
+    line-height: 1.45;
+    transition: color var(--duration) var(--ease);
+  }
+
+  .post-desc {
+    font-size: var(--text-sm);
+    margin-top: 0.35em;
+    line-height: 1.6;
+  }
+
+  .draft-badge {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.1em 0.4em;
+    margin-left: 0.5em;
+    vertical-align: middle;
+    font-family: var(--font-sans);
+    font-weight: 400;
+  }
+
+  @media (max-width: 640px) {
+    .post-link {
+      grid-template-columns: 1fr;
+      gap: 0.25em;
+    }
+    .post-date {
+      padding-top: 0;
+    }
+    .post-title {
+      font-size: var(--text-base);
+    }
+  }
+</style>

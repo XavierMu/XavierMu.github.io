@@ -1,0 +1,65 @@
+---
+import { site } from '../data/site';
+import Icon from './Icon.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-left">
+      <span class="muted">© {year} {site.author}</span>
+    </div>
+
+    <div class="footer-right">
+      {
+        site.social.map((link) => (
+          <a
+            href={link.href}
+            class="social-link plain"
+            aria-label={link.label}
+            title={link.label}
+            rel={link.href.startsWith('http') ? 'noopener' : undefined}
+          >
+            <Icon name={link.icon} size={16} />
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--line);
+    padding-block: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .social-link {
+    color: var(--fg-muted);
+    display: grid;
+    place-items: center;
+    padding: 0.25em;
+    transition: color var(--duration) var(--ease);
+  }
+
+  .social-link:hover {
+    color: var(--fg);
+  }
+</style>

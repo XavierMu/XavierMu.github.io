@@ -1,0 +1,154 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PostList from '../components/PostList.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+
+// 过滤草稿，按日期倒序
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, site.home.recentPostsCount);
+---
+
+<Base isHome={true}>
+  <!-- 首屏：身份 + 简介 -->
+  <section class="hero container">
+    <h1 class="hero-title">{site.hero.title}</h1>
+    {site.hero.subtitle && <p class="hero-subtitle">{site.hero.subtitle}</p>}
+    {site.hero.focus && <p class="hero-focus muted">{site.hero.focus}</p>}
+    <p class="hero-intro">{site.hero.intro}</p>
+
+    <ul class="hero-social">
+      {
+        site.social.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              class="social-link plain"
+              rel={link.href.startsWith('http') ? 'noopener' : undefined}
+            >
+              <Icon name={link.icon} size={15} />
+              <span>{link.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- 最近文章 -->
+  {
+    posts.length > 0 && (
+      <section class="section container">
+        <div class="section-head">
+          <h2 class="section-title">最近文章</h2>
+          <a href="/blog" class="section-more plain">
+            全部 <Icon name="arrow" size={14} />
+          </a>
+        </div>
+        <div class="post-list">
+          {posts.map((post) => (
+            <PostList post={post} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .hero {
+    padding-block: 0 var(--space-5);
+  }
+
+  .hero-title {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-lg);
+    color: var(--fg);
+    margin-bottom: 0.15em;
+  }
+
+  .hero-focus {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-3);
+  }
+
+  .hero-intro {
+    max-width: 52ch;
+    color: var(--fg-muted);
+    line-height: var(--leading-body);
+    margin-bottom: var(--space-3);
+    text-wrap: pretty;
+  }
+
+  .hero-social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    list-style: none;
+    padding: 0;
+  }
+
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .social-link:hover {
+    color: var(--fg);
+  }
+
+  .section {
+    margin-bottom: var(--space-6);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .section-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .section-more:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .hero {
+      padding-block: var(--space-2) var(--space-5);
+    }
+    .hero-title {
+      font-size: var(--text-2xl);
+    }
+    .hero-subtitle {
+      font-size: var(--text-base);
+    }
+    .hero-social {
+      gap: var(--space-2);
+    }
+  }
+</style>

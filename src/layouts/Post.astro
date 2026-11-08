@@ -1,0 +1,105 @@
+---
+/**
+ * 文章详情页。骨架由 Detail 提供，这里只负责标题区与页脚。
+ */
+import Detail from './Detail.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  tags?: string[];
+}
+
+const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Shanghai',
+  });
+---
+
+<Detail title={title} description={description}>
+  <header slot="header" class="post-header">
+    <h1 class="post-title">{title}</h1>
+
+    <div class="post-meta">
+      <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
+      {updatedDate && <span class="updated">更新于 {fmt(updatedDate)}</span>}
+      {
+        tags.length > 0 && (
+          <span class="tags">
+            {tags.map((tag) => (
+              <a href={`/blog/tag/${tag}`} class="tag">
+                #{tag}
+              </a>
+            ))}
+          </span>
+        )
+      }
+    </div>
+  </header>
+
+  <slot />
+
+  <a slot="footer" href="/blog" class="back-link plain">← 返回文章列表</a>
+</Detail>
+
+<style>
+  .post-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .post-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  .updated {
+    color: var(--fg-faint);
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.6em;
+  }
+
+  .tag {
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
+    text-decoration-color: var(--line-strong);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .tag:hover {
+    color: var(--fg);
+  }
+
+  .back-link {
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .back-link:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .post-title {
+      font-size: var(--text-xl);
+    }
+  }
+</style>

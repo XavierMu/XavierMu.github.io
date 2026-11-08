@@ -1,0 +1,359 @@
+/* ==========================================================================
+   基础样式 + 正文排版
+   依赖 tokens.css 中的变量。
+   ========================================================================== */
+
+/* ---------- Reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- 链接 ---------- */
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
+}
+
+a:hover {
+  text-decoration-color: var(--fg);
+}
+
+/* 结构性链接（导航、卡片）默认无下划线 */
+a.plain {
+  text-decoration: none;
+}
+
+/* ---------- 布局容器 ---------- */
+.container {
+  width: 100%;
+  max-width: var(--width-container);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-inline: var(--space-4);
+  }
+}
+
+.prose-width {
+  max-width: var(--width-prose);
+}
+
+/* ---------- 标题通用 ---------- */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+/* ---------- 焦点可见性（无障碍） ---------- */
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------- 选中态 ---------- */
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* ==========================================================================
+   正文排版 (.prose)
+   用于 Markdown 渲染出的裸 HTML。
+   ========================================================================== */
+
+.prose {
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--fg);
+}
+
+.prose > * + * {
+  margin-top: 1.5em;
+}
+
+.prose h2,
+.prose h3,
+.prose h4 {
+  margin-top: 2.2em;
+  margin-bottom: 0.6em;
+  scroll-margin-top: calc(64px + var(--space-3));
+}
+
+.prose h2 {
+  font-size: var(--text-xl);
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line);
+}
+
+.prose h3 {
+  font-size: var(--text-lg);
+}
+
+.prose h4 {
+  font-size: var(--text-base);
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+.prose > h2:first-child,
+.prose > h3:first-child {
+  margin-top: 0;
+}
+
+.prose p {
+  text-wrap: pretty;
+}
+
+/* 中文段落首行不缩进，靠段间距区分 */
+.prose ul,
+.prose ol {
+  padding-left: 1.5em;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose li::marker {
+  color: var(--fg-faint);
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--line-strong);
+  padding-left: 1.2em;
+  color: var(--fg-muted);
+  font-style: normal;
+}
+
+.prose blockquote > * + * {
+  margin-top: 1em;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin-block: 3em;
+}
+
+/* ---------- 代码 ---------- */
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 3px;
+  padding: 0.15em 0.35em;
+  word-break: break-word;
+}
+
+.prose pre {
+  background: var(--code-bg) !important;
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-code);
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+/* 代码块内的 code 不套用行内样式 */
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+/* Shiki 双主题：默认浅色，深色下切换 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .astro-code,
+  :root:not([data-theme='light']) .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: transparent !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+[data-theme='dark'] .astro-code,
+[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: transparent !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+/* ---------- 表格 ---------- */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  display: block;
+  overflow-x: auto;
+}
+
+.prose thead {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.prose th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.6em 0.8em;
+}
+
+.prose td {
+  padding: 0.6em 0.8em;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+/* ---------- 图片 ---------- */
+.prose img {
+  border-radius: var(--radius);
+  margin-inline: auto;
+  /* 截图类图片不撑满正文列，避免观感压迫 */
+  max-width: min(100%, 40rem);
+  height: auto;
+}
+
+.prose figure {
+  margin-inline: 0;
+}
+
+.prose figcaption {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+/* 深色模式下图片降亮，减轻刺眼 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .prose img {
+    filter: brightness(0.9);
+  }
+}
+
+[data-theme='dark'] .prose img {
+  filter: brightness(0.9);
+}
+
+/* ---------- 工具类 ---------- */
+.muted {
+  color: var(--fg-muted);
+}
+
+.faint {
+  color: var(--fg-faint);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  header.site-header,
+  footer.site-footer,
+  .no-print {
+    display: none;
+  }
+  a {
+    text-decoration: none;
+    color: #000;
+  }
+}

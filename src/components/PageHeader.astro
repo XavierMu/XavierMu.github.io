@@ -1,0 +1,38 @@
+---
+/**
+ * 页面标题区。用于列表页、关于页等。
+ */
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<header class="page-header">
+  <h1 class="page-title">{title}</h1>
+  {description && <p class="page-desc muted">{description}</p>}
+</header>
+
+<style>
+  .page-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .page-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-1);
+  }
+
+  .page-desc {
+    font-size: var(--text-base);
+    max-width: var(--width-prose);
+  }
+
+  @media (max-width: 640px) {
+    .page-title {
+      font-size: var(--text-xl);
+    }
+  }
+</style>

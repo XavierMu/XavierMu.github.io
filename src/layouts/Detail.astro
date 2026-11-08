@@ -1,0 +1,113 @@
+---
+/**
+ * 详情页共用骨架：正文居中 + 右侧目录。
+ *
+ * 文章页与项目页共用，保证两种详情页的正文宽度、留白与目录行为完全一致。
+ * 标题区由调用方通过 header slot 提供（文章有日期标签，项目有技术栈，结构不同）。
+ */
+import Base from './Base.astro';
+import Toc from '../components/Toc.astro';
+import { extractHeadings } from '../utils/toc';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+
+// 先把正文渲染成字符串，才能从中提取标题生成目录
+const bodyHtml = await Astro.slots.render('default');
+const headings = extractHeadings(bodyHtml, 2);
+---
+
+<Base title={title} description={description}>
+  <article class="detail">
+    <div class="detail-main">
+      <slot name="header" />
+
+      <div class="prose detail-body" set:html={bodyHtml} />
+
+      <footer class="detail-footer">
+        <slot name="footer" />
+      </footer>
+    </div>
+
+    {
+      headings.length >= 2 && (
+        <aside class="detail-aside">
+          <Toc items={headings} />
+        </aside>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .detail {
+    width: 100%;
+    /* 与顶栏共用同一个容器宽度与内边距，保证左右边缘对齐 */
+    max-width: var(--width-container);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+
+  /* 与 .container 的内边距保持一致 */
+  @media (min-width: 768px) {
+    .detail {
+      padding-inline: var(--space-4);
+    }
+  }
+
+  .detail-main {
+    width: 100%;
+    max-width: var(--width-prose);
+    margin-inline: auto;
+    min-width: 0;
+  }
+
+  .detail-aside {
+    display: none;
+  }
+
+  /* 大屏：正文填满剩余宽度 + 右侧目录，左右边缘对齐顶栏 */
+  @media (min-width: 1280px) {
+    .detail {
+      grid-template-columns: minmax(0, 1fr) var(--width-aside);
+      column-gap: var(--gap-aside);
+      align-items: start;
+    }
+
+    .detail-main {
+      /* 正文占满除右栏与间距之外的全部宽度 */
+      max-width: none;
+      margin-inline: 0;
+    }
+
+    .detail-aside {
+      display: block;
+      position: sticky;
+      top: calc(64px + var(--space-4));
+      max-height: calc(100vh - 64px - var(--space-5));
+      overflow-y: auto;
+      padding-top: 0.4em;
+      scrollbar-width: thin;
+    }
+  }
+
+  .detail-footer {
+    margin-top: var(--space-5);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 640px) {
+    .detail {
+      padding-inline: var(--space-3);
+    }
+  }
+</style>
