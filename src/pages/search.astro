@@ -30,15 +30,48 @@ import PageHeader from '../components/PageHeader.astro';
     max-width: var(--width-prose);
   }
 
-  /* 覆盖 Pagefind 默认样式，贴合站点气质 */
+  /* Pagefind 把输入框、清除按钮和结果列表都放在同一个 form 里。
+     用 grid：第一行是「输入框 + 清除按钮」，结果列表单独占满整行。 */
   .search-root :global(.pagefind-ui__form) {
+    position: relative;
     margin-bottom: var(--space-3);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 0;
+  }
+
+  .search-root :global(.pagefind-ui__form > *) {
+    grid-column: 1 / -1;
+  }
+
+  .search-root :global(.pagefind-ui__form > .pagefind-ui__search-input) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    /* 给右侧按钮留位，让按钮压在输入框内部 */
+    padding-right: 4.2em;
+  }
+
+  .search-root :global(.pagefind-ui__form > .pagefind-ui__search-clear) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    margin-right: 0.35em;
+    z-index: 1;
+  }
+
+  /* Pagefind 在表单里放了 ::before 做放大镜图标，这里去掉 */
+  .search-root :global(.pagefind-ui__form::before) {
+    display: none;
   }
 
   .search-root :global(.pagefind-ui__search-input) {
+    width: 100%;
     font-family: var(--font-sans);
     font-size: var(--text-base);
     padding: 0.6em 0.8em;
+    /* 给右侧的清除按钮留出空间 */
+    padding-right: 4.5em;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--bg);
@@ -53,10 +86,33 @@ import PageHeader from '../components/PageHeader.astro';
   }
 
   .search-root :global(.pagefind-ui__search-clear) {
+    white-space: nowrap;
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--fg-muted);
     background: transparent;
-    padding: 0 0.8em;
+    /* 必须显式覆盖 border，否则会露出浏览器默认的 outset 立体边框 */
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.45em 0.7em;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .search-root :global(.pagefind-ui__search-clear:hover) {
+    color: var(--fg);
+    background: var(--bg-subtle);
+  }
+
+  .search-root :global(.pagefind-ui__search-clear:focus-visible) {
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
+  }
+
+  .search-root :global(.pagefind-ui__form::before) {
+    display: none;
   }
 
   .search-root :global(.pagefind-ui__message) {
