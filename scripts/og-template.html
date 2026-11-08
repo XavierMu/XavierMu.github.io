@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1200px;
+        height: 630px;
+      }
+
+      body {
+        background: #fdfdfc;
+        color: #1a1a1a;
+        font-family: "Noto Serif SC", "Songti SC", "SimSun", Georgia, serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 80px 88px;
+        position: relative;
+      }
+
+      /* 顶部细线，呼应站点气质 */
+      .rule {
+        position: absolute;
+        top: 0;
+        left: 88px;
+        right: 88px;
+        height: 1px;
+        background: #e5e4e2;
+      }
+
+      .brand {
+        font-size: 30px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 28px;
+      }
+
+      .title {
+        font-size: 76px;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+      }
+
+      .desc {
+        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        font-size: 28px;
+        color: #6b6b6b;
+        line-height: 1.5;
+        max-width: 900px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        font-size: 22px;
+        color: #9e9e9e;
+      }
+
+      .url {
+        font-family: "Cascadia Code", Consolas, monospace;
+        font-size: 20px;
+      }
+
+      /* 右下角标记 */
+      .mark {
+        position: absolute;
+        right: 88px;
+        bottom: 78px;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        background: #1a1a1a;
+        color: #fdfdfc;
+        display: grid;
+        place-items: center;
+        font-size: 30px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rule"></div>
+    <div class="brand">慕</div>
+
+    <div class="main">
+      <div class="title">记录读过的书、<br />写过的代码</div>
+      <div class="desc">以及那些当时没弄明白、后来终于想清楚的事。</div>
+    </div>
+
+    <div class="footer">
+      <span class="url">xaviermu.github.io</span>
+    </div>
+  </body>
+</html>

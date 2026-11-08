@@ -1,5 +1,13 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+
+// 列出最近的几篇，给走错路的访客一个落脚点
+const recent = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
 ---
 
 <Base title="404 · 页面不存在" description="你要找的页面不存在。">
@@ -7,11 +15,35 @@ import Base from '../layouts/Base.astro';
     <p class="code mono faint">404</p>
     <h1 class="title">页面不存在</h1>
     <p class="muted">链接可能已失效，或者这个页面还没写。</p>
-    <p class="links">
-      <a href="/" class="plain">返回首页</a>
-      <span class="sep faint">/</span>
-      <a href="/blog" class="plain">看看文章</a>
-    </p>
+
+    <nav class="links" aria-label="常用入口">
+      <a href="/" class="entry">首页</a>
+      <a href="/blog" class="entry">全部文章</a>
+      <a href="/archive" class="entry">归档</a>
+      <a href="/tags" class="entry">标签</a>
+      {
+        recent.length > 0 && (
+          <a href={`/blog/${slugOf(recent[0].id)}`} class="entry">
+            最近一篇
+          </a>
+        )
+      }
+    </nav>
+
+    {
+      recent.length > 0 && (
+        <section class="recent">
+          <h2 class="recent-title">也许你想看</h2>
+          <ul class="recent-list">
+            {recent.map((post) => (
+              <li>
+                <a href={`/blog/${slugOf(post.id)}`}>{post.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
   </div>
 </Base>
 
@@ -33,11 +65,60 @@ import Base from '../layouts/Base.astro';
   }
 
   .links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
     margin-top: var(--space-4);
+  }
+
+  .entry {
+    padding: 0.4em 0.9em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease),
+      border-color var(--duration) var(--ease);
+  }
+
+  .entry:hover {
+    color: var(--fg);
+    border-color: var(--line-strong);
+  }
+
+  .recent {
+    margin-top: var(--space-5);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .recent-title {
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--fg-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-2);
+  }
+
+  .recent-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
     font-size: var(--text-sm);
   }
 
-  .sep {
-    margin-inline: 0.8em;
+  .recent-list a {
+    color: var(--fg-muted);
+    text-decoration-color: var(--line-strong);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .recent-list a:hover {
+    color: var(--fg);
   }
 </style>

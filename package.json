@@ -10,10 +10,13 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
-    "check": "astro check"
+    "check": "astro check",
+    "og": "node scripts/og.mjs",
+    "icons": "node scripts/icons.mjs",
+    "assets": "node scripts/og.mjs && node scripts/icons.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.1.3",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "pagefind": "^1.6.0",
     "playwright": "^1.65.0",
     "typescript": "^6.0.3"
   }

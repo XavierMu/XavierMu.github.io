@@ -10,9 +10,23 @@ interface Props {
   pubDate: Date;
   updatedDate?: Date;
   tags?: string[];
+  readingTime?: number;
+  newer?: { title: string; href: string } | null;
+  older?: { title: string; href: string } | null;
+  /** 文章 slug，用于定位分享图 /og/<slug>.png */
+  slug?: string;
 }
 
-const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  tags = [],
+  readingTime,
+  newer = null,
+  older = null,
+} = Astro.props;
 
 const fmt = (d: Date) =>
   d.toLocaleDateString('zh-CN', {
@@ -21,14 +35,29 @@ const fmt = (d: Date) =>
     day: 'numeric',
     timeZone: 'Asia/Shanghai',
   });
+
+// 文章分享图按 slug 命名，由 scripts/og.mjs 生成
+const slug = Astro.props.slug;
+const ogImage = slug ? `/og/${slug}.png` : undefined;
 ---
 
-<Detail title={title} description={description}>
+<Detail
+  title={title}
+  description={description}
+  image={ogImage}
+  type="article"
+  publishedAt={pubDate}
+  updatedAt={updatedDate}
+  tags={tags}
+>
   <header slot="header" class="post-header">
     <h1 class="post-title">{title}</h1>
 
     <div class="post-meta">
       <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
+      {readingTime && (
+        <span class="reading">{readingTime} 分钟阅读</span>
+      )}
       {updatedDate && <span class="updated">更新于 {fmt(updatedDate)}</span>}
       {
         tags.length > 0 && (
@@ -46,7 +75,32 @@ const fmt = (d: Date) =>
 
   <slot />
 
-  <a slot="footer" href="/blog" class="back-link plain">← 返回文章列表</a>
+  <footer slot="footer" class="post-footer">
+    {
+      (newer || older) && (
+        <nav class="post-nav" aria-label="文章导航">
+          {newer ? (
+            <a href={newer.href} class="nav-item">
+              <span class="nav-dir">← 较新</span>
+              <span class="nav-title">{newer.title}</span>
+            </a>
+          ) : (
+            <span />
+          )}
+          {older ? (
+            <a href={older.href} class="nav-item nav-next">
+              <span class="nav-dir">较旧 →</span>
+              <span class="nav-title">{older.title}</span>
+            </a>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )
+    }
+
+    <a href="/blog" class="back-link plain">← 返回文章列表</a>
+  </footer>
 </Detail>
 
 <style>
@@ -66,6 +120,10 @@ const fmt = (d: Date) =>
     gap: var(--space-2);
     font-size: var(--text-sm);
     color: var(--fg-muted);
+  }
+
+  .reading {
+    color: var(--fg-faint);
   }
 
   .updated {
@@ -88,6 +146,55 @@ const fmt = (d: Date) =>
     color: var(--fg);
   }
 
+  /* ---------- 上下篇 ---------- */
+  .post-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    text-decoration: none;
+    color: var(--fg);
+    padding: var(--space-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color var(--duration) var(--ease);
+    min-width: 0;
+  }
+
+  .nav-item:hover {
+    border-color: var(--line-strong);
+  }
+
+  .nav-next {
+    text-align: right;
+  }
+
+  .nav-dir {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+  }
+
+  .nav-title {
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    /* 长标题最多两行 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .back-link {
     color: var(--fg-muted);
     transition: color var(--duration) var(--ease);
@@ -100,6 +207,12 @@ const fmt = (d: Date) =>
   @media (max-width: 640px) {
     .post-title {
       font-size: var(--text-xl);
+    }
+    .post-nav {
+      grid-template-columns: 1fr;
+    }
+    .nav-next {
+      text-align: left;
     }
   }
 </style>

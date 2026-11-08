@@ -14,7 +14,14 @@ interface Props {
   description?: string;
   /** 文章/项目页传自己的标题，首页传 undefined */
   isHome?: boolean;
+  /** 分享图路径，相对 public/ 或绝对 URL；不传用默认图 */
   image?: string;
+  /** 页面类型，影响 OG 与 JSON-LD */
+  type?: 'website' | 'article';
+  /** 文章发布日期，用于 JSON-LD */
+  publishedAt?: Date;
+  updatedAt?: Date;
+  tags?: string[];
 }
 
 const {
@@ -22,14 +29,46 @@ const {
   description = site.description,
   isHome = false,
   image,
+  type = isHome ? 'website' : 'article',
+  publishedAt,
+  updatedAt,
+  tags = [],
 } = Astro.props;
 
 const pageTitle = isHome ? site.title : title ? `${title} · ${site.title}` : site.title;
 const canonical = new URL(Astro.url.pathname, site.url).href;
-const ogImage = image ? new URL(image, site.url).href : undefined;
+
+// 分享图：页面自带优先，否则用默认图
+const imagePath = image ?? '/og/default.png';
+const ogImage = new URL(imagePath, site.url).href;
 
 // 当前路径去掉末尾斜杠，供导航激活判断
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+// JSON-LD：帮助搜索引擎理解页面性质
+const jsonLd = isHome
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: site.title,
+      description: site.description,
+      url: site.url,
+      author: { '@type': 'Person', name: site.author },
+    }
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: title,
+      description,
+      url: canonical,
+      image: ogImage,
+      datePublished: publishedAt?.toISOString(),
+      dateModified: (updatedAt ?? publishedAt)?.toISOString(),
+      author: { '@type': 'Person', name: site.author },
+      publisher: { '@type': 'Person', name: site.author },
+      ...(tags.length > 0 ? { keywords: tags.join(', ') } : {}),
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    };
 ---
 
 <!doctype html>
@@ -43,22 +82,32 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
     <meta name="generator" content={Astro.generator} />
 
     <!-- Open Graph -->
-    <meta property="og:type" content={isHome ? 'website' : 'article'} />
+    <meta property="og:type" content={type} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={site.title} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={pageTitle} />
 
     <!-- Twitter -->
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- 结构化数据 -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <!-- RSS -->
     <link rel="alternate" type="application/rss+xml" title={`${site.title} RSS`} href="/rss.xml" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- 主题：首屏前同步执行，避免深色模式闪白 -->
     <script is:inline>

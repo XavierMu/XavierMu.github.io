@@ -1,0 +1,184 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+---
+
+<Base title="搜索" description="站内全文搜索。">
+  <div class="container">
+    <PageHeader title="搜索" description="支持中文分词，输入关键词即可。" />
+
+    <!-- Pagefind UI 挂载点 -->
+    <div id="search" class="search-root"></div>
+
+    <noscript>
+      <p class="muted">搜索需要 JavaScript。你也可以直接浏览<a href="/archive">归档</a>或<a href="/tags">标签</a>。</p>
+    </noscript>
+  </div>
+</Base>
+
+<style>
+  .search-root {
+    --pagefind-ui-scale: 0.85;
+    --pagefind-ui-primary: var(--fg);
+    --pagefind-ui-text: var(--fg);
+    --pagefind-ui-background: var(--bg);
+    --pagefind-ui-border: var(--line);
+    --pagefind-ui-tag: var(--bg-subtle);
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: var(--radius);
+    --pagefind-ui-font: var(--font-sans);
+    max-width: var(--width-prose);
+  }
+
+  /* 覆盖 Pagefind 默认样式，贴合站点气质 */
+  .search-root :global(.pagefind-ui__form) {
+    margin-bottom: var(--space-3);
+  }
+
+  .search-root :global(.pagefind-ui__search-input) {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    padding: 0.6em 0.8em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--fg);
+    transition: border-color var(--duration) var(--ease);
+  }
+
+  .search-root :global(.pagefind-ui__search-input:focus) {
+    outline: none;
+    border-color: var(--line-strong);
+    box-shadow: none;
+  }
+
+  .search-root :global(.pagefind-ui__search-clear) {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    background: transparent;
+    padding: 0 0.8em;
+  }
+
+  .search-root :global(.pagefind-ui__message) {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    padding: var(--space-2) 0;
+  }
+
+  .search-root :global(.pagefind-ui__result) {
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .search-root :global(.pagefind-ui__result:last-child) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .search-root :global(.pagefind-ui__result-title) {
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .search-root :global(.pagefind-ui__result-title a) {
+    text-decoration: none;
+    color: var(--fg);
+  }
+
+  .search-root :global(.pagefind-ui__result-excerpt) {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    line-height: 1.7;
+  }
+
+  .search-root :global(mark) {
+    background: var(--bg-subtle);
+    color: var(--fg);
+    padding: 0 0.1em;
+    border-radius: 2px;
+  }
+
+  .search-root :global(.pagefind-ui__result-nested) {
+    padding-left: var(--space-2);
+    border-left: 1px solid var(--line);
+    margin-top: 0.5em;
+  }
+
+  /* 结果列表：去掉默认有序列表序号和缩进 */
+  .search-root :global(.pagefind-ui__results) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: none;
+  }
+
+  .search-root :global(.pagefind-ui__result) {
+    list-style: none;
+  }
+
+  .search-root :global(.pagefind-ui__results > .pagefind-ui__result::before) {
+    content: none;
+    display: none;
+  }
+
+  .search-root :global(.pagefind-ui__result-thumb),
+  .search-root :global(.pagefind-ui__result-image) {
+    display: none;
+  }
+
+  .search-root :global(.pagefind-ui__result-nested .pagefind-ui__result-title::before),
+  .search-root :global(.pagefind-ui__result-title::before) {
+    content: none;
+  }
+
+  .search-root :global(.pagefind-ui__result-nested .pagefind-ui__result-title) {
+    font-size: var(--text-base);
+    font-weight: 500;
+  }
+
+  .search-root :global(.pagefind-ui__drawer) {
+    border: 0;
+    padding: 0;
+  }
+</style>
+
+<script>
+  // 渐进增强：构建产物里的 Pagefind UI 由 pagefind 生成，
+  // 用运行时注入 <script> 的方式加载，避免 Vite 在构建期尝试解析。
+  function loadPagefind(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/pagefind/pagefind-ui.js';
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('pagefind ui not found'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function initSearch() {
+    const root = document.getElementById('search');
+    if (!root) return;
+
+    try {
+      await loadPagefind();
+      // @ts-expect-error 全局由 pagefind-ui.js 挂载
+      new window.PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        showImages: false,
+        translations: {
+          placeholder: '搜索文章…',
+          zero_results: '没有找到「[SEARCH_TERM]」',
+          many_results: '找到 [COUNT] 条结果',
+          one_result: '找到 1 条结果',
+          searching: '搜索中…',
+        },
+      });
+    } catch {
+      root.innerHTML =
+        '<p style="color:var(--fg-muted);font-size:var(--text-sm)">搜索索引尚未生成。请先运行 <code>pnpm build</code>，或在浏览器里打开生产构建。</p>';
+    }
+  }
+
+  initSearch();
+</script>

@@ -26,7 +26,11 @@ function isActive(href: string): boolean {
         site.nav.map((item) => (
           <a
             href={item.href}
-            class:list={['nav-link', 'plain', { active: isActive(item.href) }]}
+            class:list={[
+              'nav-link',
+              'plain',
+              { active: isActive(item.href), secondary: item.secondary },
+            ]}
             aria-current={isActive(item.href) ? 'page' : undefined}
           >
             {item.label}
@@ -140,6 +144,16 @@ function isActive(href: string): boolean {
     }
     :global(:root:not([data-theme='light'])) .icon-moon {
       display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    /* 窄屏只保留核心导航，次要项隐藏（仍可从文章页/404 页到达） */
+    .nav-link.secondary {
+      display: none;
+    }
+    .nav-link {
+      font-size: var(--text-sm);
     }
   }
 

@@ -30,6 +30,13 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
   <div class="container">
     <PageHeader title="文章" description={`共 ${posts.length} 篇`} />
 
+    <nav class="view-switch" aria-label="浏览方式">
+      <span class="current">按时间</span>
+      <a href="/archive">按归档</a>
+      <a href="/tags">按标签</a>
+      <a href="/search">搜索</a>
+    </nav>
+
     {
       tags.length > 0 && (
         <nav class="tag-nav" aria-label="标签">
@@ -62,6 +69,36 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
 </Base>
 
 <style>
+  /* 浏览方式切换：窄屏隐藏导航时，从这里进入归档/标签/搜索 */
+  .view-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .view-switch a,
+  .view-switch .current {
+    text-decoration: none;
+    padding: 0.25em 0;
+  }
+
+  .view-switch a {
+    color: var(--fg-muted);
+    text-decoration-color: var(--line-strong);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .view-switch a:hover {
+    color: var(--fg);
+  }
+
+  .view-switch .current {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
   .tag-nav {
     display: flex;
     flex-wrap: wrap;

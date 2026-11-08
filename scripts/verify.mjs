@@ -74,7 +74,7 @@ check('焦点有可见轮廓', outline !== '0px' && outline !== 'none', outline)
 // ---------- 移动端无横向滚动 ----------
 const mctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const mpage = await mctx.newPage();
-for (const p of ['/', '/blog', '/about', '/projects', '/projects/sdust-webvpn', '/blog/tvbox-tutorial']) {
+for (const p of ['/', '/blog', '/about', '/projects', '/tags', '/archive', '/search', '/blog/tvbox-tutorial']) {
   await mpage.goto(BASE + p, { waitUntil: 'networkidle' });
   const overflow = await mpage.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth + 1
@@ -91,5 +91,6 @@ for (const r of results) {
 }
 console.log(`\n通过 ${results.length - failed.length}/${results.length}`);
 if (failed.length) process.exitCode = 1;
+
 
 

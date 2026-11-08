@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { getSortedPosts, countTags } from '../utils/posts';
+
+const posts = await getSortedPosts(getCollection);
+const tags = countTags(posts);
+
+// 按数量分组，用于视觉分层
+const max = Math.max(...tags.map(([, c]) => c), 1);
+---
+
+<Base title="标签" description="全部文章标签，按文章数量排序。">
+  <div class="container">
+    <PageHeader title="标签" description={`共 ${tags.length} 个`} />
+
+    {
+      tags.length === 0 ? (
+        <p class="muted empty">还没有标签。</p>
+      ) : (
+        <ul class="tag-cloud">
+          {tags.map(([tag, count]) => {
+            // 字号随数量微调，但幅度很小，避免视觉噪音
+            const scale = 1 + (count / max) * 0.35;
+            return (
+              <li>
+                <a href={`/blog/tag/${tag}`} class="tag-item">
+                  <span class="tag-name" style={`font-size:${scale.toFixed(2)}em`}>
+                    {tag}
+                  </span>
+                  <span class="tag-count mono">{count}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .tag-cloud {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .tag-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    padding: 0.45em 0.9em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--fg);
+    transition: border-color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .tag-item:hover {
+    border-color: var(--line-strong);
+    background: var(--bg-subtle);
+  }
+
+  .tag-name {
+    font-family: var(--font-serif);
+  }
+
+  .tag-count {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+  }
+
+  .empty {
+    padding-block: var(--space-5);
+  }
+</style>

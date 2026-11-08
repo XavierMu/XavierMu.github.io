@@ -1,19 +1,38 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Post from '../../layouts/Post.astro';
+import { entryReadingTime } from '../../utils/posts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  // getStaticPaths 在独立作用域执行，工具函数需定义在函数内部
+  const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
 
-  return posts.map((post) => ({
-    params: { slug: post.id.replace(/\.(md|mdx)$/, '') },
-    props: { post },
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  );
+
+  // 数组按日期倒序：索引小的更新
+  return posts.map((post, i) => ({
+    params: { slug: slugOf(post.id) },
+    props: {
+      post,
+      // 更新的那篇（往前看）
+      newer: i > 0 ? posts[i - 1] : null,
+      // 更旧的那篇（往后看）
+      older: i < posts.length - 1 ? posts[i + 1] : null,
+    },
   }));
 }
 
-const { post } = Astro.props;
+const { post, newer, older } = Astro.props;
 const { Content } = await render(post);
 const { title, description, pubDate, updatedDate, tags } = post.data;
+const minutes = entryReadingTime(post);
+
+const brief = (p: typeof post) => ({
+  title: p.data.title,
+  href: `/blog/${p.id.replace(/\.(md|mdx)$/, '')}`,
+});
 ---
 
 <Post
@@ -22,6 +41,10 @@ const { title, description, pubDate, updatedDate, tags } = post.data;
   pubDate={pubDate}
   updatedDate={updatedDate}
   tags={tags}
+  readingTime={minutes}
+  slug={post.id.replace(/\.(md|mdx)$/, '')}
+  newer={newer ? brief(newer) : null}
+  older={older ? brief(older) : null}
 >
   <Content />
 </Post>

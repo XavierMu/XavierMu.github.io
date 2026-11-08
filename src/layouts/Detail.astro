@@ -12,26 +12,48 @@ import { extractHeadings } from '../utils/toc';
 interface Props {
   title: string;
   description: string;
+  /** 分享图，相对 public/ */
+  image?: string;
+  /** 文章页传 article，项目页用 website */
+  type?: 'website' | 'article';
+  publishedAt?: Date;
+  updatedAt?: Date;
+  tags?: string[];
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  type = 'article',
+  publishedAt,
+  updatedAt,
+  tags,
+} = Astro.props;
 
 // 先把正文渲染成字符串，才能从中提取标题生成目录
 const bodyHtml = await Astro.slots.render('default');
 const headings = extractHeadings(bodyHtml, 2);
 ---
 
-<Base title={title} description={description}>
+<Base
+  title={title}
+  description={description}
+  image={image}
+  type={type}
+  publishedAt={publishedAt}
+  updatedAt={updatedAt}
+  tags={tags}
+>
   <article class="detail">
     <div class="detail-main">
       <slot name="header" />
 
-      <div class="prose detail-body" set:html={bodyHtml} />
+      <div class="prose detail-body" data-pagefind-body set:html={bodyHtml} />
 
       <footer class="detail-footer">
         <slot name="footer" />
-      </footer>
-    </div>
+      </footer>    </div>
 
     {
       headings.length >= 2 && (
