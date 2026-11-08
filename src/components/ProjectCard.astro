@@ -1,0 +1,142 @@
+---
+/**
+ * 项目卡片。首页用简洁版，列表页用完整版。
+ */
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  variant?: 'compact' | 'full';
+}
+
+const { project, variant = 'compact' } = Astro.props;
+const { title, description, year, role, status, stack, repo, demo } = project.data;
+const slug = project.id.replace(/\.(md|mdx)$/, '');
+---
+
+<article class:list={['project-card', variant]}>
+  <a href={`/projects/${slug}`} class="card-link plain">
+    <div class="card-head">
+      <h2 class="card-title">{title}</h2>
+      <span class="card-year mono">{year}</span>
+    </div>
+
+    <p class="card-desc">{description}</p>
+
+    {variant === 'full' && <p class="card-role muted">{role} · {status}</p>}
+
+    {
+      stack.length > 0 && (
+        <ul class="stack">
+          {stack.map((tech) => (
+            <li class="stack-item mono">{tech}</li>
+          ))}
+        </ul>
+      )
+    }
+  </a>
+
+  {
+    variant === 'full' && (repo || demo) && (
+      <div class="card-links">
+        {repo && (
+          <a href={repo} class="ext-link plain" rel="noopener" target="_blank">
+            源码 ↗
+          </a>
+        )}
+        {demo && (
+          <a href={demo} class="ext-link plain" rel="noopener" target="_blank">
+            演示 ↗
+          </a>
+        )}
+      </div>
+    )
+  }
+</article>
+
+<style>
+  .project-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-2);
+    background: var(--bg);
+    transition: border-color var(--duration) var(--ease);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project-card:hover {
+    border-color: var(--line-strong);
+  }
+
+  .card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    flex: 1;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .card-title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    font-family: var(--font-sans);
+  }
+
+  .card-year {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    flex-shrink: 0;
+  }
+
+  .card-desc {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  .card-role {
+    font-size: var(--text-xs);
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    list-style: none;
+    padding: 0;
+    margin-top: 0.3em;
+  }
+
+  .stack-item {
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+  }
+
+  .card-links {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--line);
+    font-size: var(--text-xs);
+  }
+
+  .ext-link {
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .ext-link:hover {
+    color: var(--fg);
+  }
+</style>

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PostList from '../components/PostList.astro';
+import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
 import { site } from '../data/site';
 
@@ -9,6 +10,12 @@ import { site } from '../data/site';
 const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, site.home.recentPostsCount);
+
+// 首页只展示精选项目
+const projects = (await getCollection('projects', ({ data }) => !data.draft))
+  .filter((p) => p.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 6);
 ---
 
 <Base isHome={true}>
@@ -50,6 +57,25 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
         <div class="post-list">
           {posts.map((post) => (
             <PostList post={post} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 精选项目 -->
+  {
+    site.home.showFeaturedProjects && projects.length > 0 && (
+      <section class="section container">
+        <div class="section-head">
+          <h2 class="section-title">项目</h2>
+          <a href="/projects" class="section-more plain">
+            全部 <Icon name="arrow" size={14} />
+          </a>
+        </div>
+        <div class="project-grid">
+          {projects.map((project) => (
+            <ProjectCard project={project} variant="compact" />
           ))}
         </div>
       </section>
@@ -137,6 +163,14 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
     color: var(--fg);
   }
 
+  .project-grid {
+    display: grid;
+    /* 与项目列表页保持一致：卡片不无限拉伸 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 400px));
+    gap: var(--space-2);
+    justify-content: start;
+  }
+
   @media (max-width: 640px) {
     .hero {
       padding-block: var(--space-2) var(--space-5);
@@ -149,6 +183,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
     }
     .hero-social {
       gap: var(--space-2);
+    }
+    .project-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>

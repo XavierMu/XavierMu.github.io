@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort((a, b) => {
+  if (a.data.order !== b.data.order) return a.data.order - b.data.order;
+  return b.data.year - a.data.year;
+});
+---
+
+<Base title="项目" description="做过的项目：解决的问题、采用的技术与结果。">
+  <div class="container">
+    <PageHeader title="项目" description={`共 ${projects.length} 个`} />
+
+    {
+      projects.length === 0 ? (
+        <p class="muted empty">还没有项目。</p>
+      ) : (
+        <div class="project-grid">
+          {projects.map((project) => (
+            <ProjectCard project={project} variant="full" />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .project-grid {
+    display: grid;
+    /* 卡片不无限拉伸：最多 2 列，每列上限 480px */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 480px));
+    gap: var(--space-3);
+    justify-content: start;
+  }
+
+  .empty {
+    padding-block: var(--space-5);
+  }
+
+  @media (max-width: 640px) {
+    .project-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

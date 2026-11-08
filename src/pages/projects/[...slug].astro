@@ -1,0 +1,165 @@
+---
+import { getCollection, render } from 'astro:content';
+import Detail from '../../layouts/Detail.astro';
+import Icon from '../../components/Icon.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', ({ data }) => !data.draft);
+
+  return projects.map((project) => ({
+    params: { slug: project.id.replace(/\.(md|mdx)$/, '') },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, description, year, role, status, stack, repo, demo } = project.data;
+---
+
+<Detail title={title} description={description}>
+  <header slot="header" class="project-header">
+    <h1 class="project-title">{title}</h1>
+    <p class="project-desc muted">{description}</p>
+
+    <dl class="meta-grid">
+      <div class="meta-item">
+        <dt>年份</dt>
+        <dd class="mono">{year}</dd>
+      </div>
+      <div class="meta-item">
+        <dt>角色</dt>
+        <dd>{role}</dd>
+      </div>
+      <div class="meta-item">
+        <dt>状态</dt>
+        <dd>{status}</dd>
+      </div>
+      {
+        stack.length > 0 && (
+          <div class="meta-item">
+            <dt>技术栈</dt>
+            <dd class="stack">
+              {stack.map((tech) => (
+                <span class="stack-item mono">{tech}</span>
+              ))}
+            </dd>
+          </div>
+        )
+      }
+    </dl>
+
+    {
+      (repo || demo) && (
+        <div class="project-links">
+          {repo && (
+            <a href={repo} class="ext-btn plain" rel="noopener" target="_blank">
+              <Icon name="github" size={15} />
+              源代码
+            </a>
+          )}
+          {demo && (
+            <a href={demo} class="ext-btn plain" rel="noopener" target="_blank">
+              <Icon name="link" size={15} />
+              下载 / 演示
+            </a>
+          )}
+        </div>
+      )
+    }
+  </header>
+
+  <Content />
+
+  <a slot="footer" href="/projects" class="back-link plain">← 返回项目列表</a>
+</Detail>
+
+<style>
+  .project-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .project-title {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-1);
+  }
+
+  .project-desc {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-3);
+  }
+
+  .meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-4);
+    padding-block: var(--space-2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin: 0 0 var(--space-3);
+  }
+
+  .meta-item dt {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    margin-bottom: 0.2em;
+  }
+
+  .meta-item dd {
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+  }
+
+  .stack-item {
+    font-size: var(--text-xs);
+    color: var(--fg-muted);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.05em 0.4em;
+  }
+
+  .project-links {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .ext-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0.4em 0.8em;
+    transition: color var(--duration) var(--ease),
+      border-color var(--duration) var(--ease);
+  }
+
+  .ext-btn:hover {
+    color: var(--fg);
+    border-color: var(--line-strong);
+  }
+
+  .back-link {
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .back-link:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .project-title {
+      font-size: var(--text-xl);
+    }
+  }
+</style>

@@ -37,11 +37,13 @@ export const site = {
 
   nav: [
     { label: '文章', href: '/blog' },
+    { label: '项目', href: '/projects' },
     { label: '关于', href: '/about' },
   ] as NavItem[],
 
   home: {
     showRecentPosts: true,
     recentPostsCount: 5,
+    showFeaturedProjects: true,
   },
 } as const;

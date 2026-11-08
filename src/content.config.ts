@@ -4,12 +4,6 @@ import { glob } from 'astro/loaders';
 /**
  * 内容集合定义。
  * 字段由 schema 强制校验：写错字段或类型，构建时直接报错。
- *
- * 项目集合暂时移除（免得生成空页面）。
- * 以后要加项目时：
- *  1. 在此重新定义 projects 集合
- *  2. 恢复 src/pages/projects/ 下的两个路由
- *  3. 在 src/data/site.ts 的 nav 里加回「项目」
  */
 
 const blog = defineCollection({
@@ -24,4 +18,27 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+const projects = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().max(160),
+    /** 项目主要开发年份 */
+    year: z.number().int().min(2000).max(2100),
+    /** 你的角色，如「独立开发」 */
+    role: z.string(),
+    /** 状态：维护中 / 已完成 / 归档 */
+    status: z.string().default('维护中'),
+    stack: z.array(z.string()).default([]),
+    repo: z.string().url().optional(),
+    /** 演示或下载地址 */
+    demo: z.string().url().optional(),
+    /** 是否显示在首页 */
+    featured: z.boolean().default(false),
+    /** 排序，越小越靠前 */
+    order: z.number().default(99),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, projects };
