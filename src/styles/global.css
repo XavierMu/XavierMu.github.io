@@ -112,12 +112,17 @@ h4 {
   font-weight: 600;
   line-height: var(--leading-heading);
   letter-spacing: 0.01em;
-  text-wrap: balance;
   /*
-   * 中文标题不按字断开，只在标点/括号处换行。
-   * 否则「（手机端）」会被拆成「（手 / 机端）」。
+   * 标题换行策略（多行时）：
+   * - keep-all：中文不按字断开，只在标点/括号处换行
+   * - pretty：优先让前面的行填满，避免「末行比首行还长」
+   *
+   * 实测「TVBox 类软件使用教程（手机端）——以 OK 影视为例」：
+   *   balance/默认 → 330 / 439（末行更长）
+   *   pretty       → 581 / 181（首行更长）
    */
   word-break: keep-all;
+  text-wrap: pretty;
   overflow-wrap: anywhere;
 }
 
