@@ -1,4 +1,4 @@
----
+﻿---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
@@ -6,15 +6,6 @@ import PostList from '../../components/PostList.astro';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-
-// 全部标签及计数
-const tagCounts = new Map<string, number>();
-for (const post of posts) {
-  for (const tag of post.data.tags) {
-    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-  }
-}
-const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 
 // 按年份分组
 const byYear = new Map<number, typeof posts>();
@@ -29,25 +20,6 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
 <Base title="文章" description="技术文章、论文笔记与工程实践。">
   <div class="container">
     <PageHeader title="文章" description={`共 ${posts.length} 篇`} />
-
-    <nav class="view-switch" aria-label="浏览方式">
-      <span class="current">按时间</span>
-      <a href="/archive">按归档</a>
-      <a href="/tags">按标签</a>
-      <a href="/search">搜索</a>
-    </nav>
-
-    {
-      tags.length > 0 && (
-        <nav class="tag-nav" aria-label="标签">
-          {tags.map(([tag, count]) => (
-            <a href={`/blog/tag/${tag}`} class="tag">
-              #{tag}<span class="tag-count">{count}</span>
-            </a>
-          ))}
-        </nav>
-      )
-    }
 
     {
       posts.length === 0 ? (
@@ -69,65 +41,6 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
 </Base>
 
 <style>
-  /* 浏览方式切换：窄屏隐藏导航时，从这里进入归档/标签/搜索 */
-  .view-switch {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-bottom: var(--space-3);
-    font-size: var(--text-sm);
-  }
-
-  .view-switch a,
-  .view-switch .current {
-    text-decoration: none;
-    padding: 0.25em 0;
-  }
-
-  .view-switch a {
-    color: var(--fg-muted);
-    text-decoration-color: var(--line-strong);
-    transition: color var(--duration) var(--ease);
-  }
-
-  .view-switch a:hover {
-    color: var(--fg);
-  }
-
-  .view-switch .current {
-    color: var(--fg);
-    font-weight: 500;
-  }
-
-  .tag-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    margin-bottom: var(--space-5);
-  }
-
-  .tag {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.3em;
-    font-size: var(--text-sm);
-    color: var(--fg-muted);
-    text-decoration-color: var(--line-strong);
-    transition: color var(--duration) var(--ease),
-      text-decoration-color var(--duration) var(--ease);
-  }
-
-  .tag:hover {
-    color: var(--fg);
-    text-decoration-color: var(--fg);
-  }
-
-  .tag-count {
-    color: var(--fg-faint);
-    font-size: var(--text-xs);
-    font-variant-numeric: tabular-nums;
-  }
-
   .year-group {
     margin-bottom: var(--space-5);
   }

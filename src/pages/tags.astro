@@ -47,17 +47,21 @@ const max = Math.max(...tags.map(([, c]) => c), 1);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+    /* 以 14px 为基准，tag-name 的 em 缩放才有参照 */
+    font-size: var(--text-sm);
   }
 
   .tag-item {
     display: inline-flex;
     align-items: baseline;
     gap: 0.4em;
-    padding: 0.45em 0.9em;
+    /* 高度随字号变化，用 em 控制内距保证比例一致 */
+    padding: 0.5em 0.95em;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     text-decoration: none;
     color: var(--fg);
+    line-height: 1.4;
     transition: border-color var(--duration) var(--ease),
       background-color var(--duration) var(--ease);
   }

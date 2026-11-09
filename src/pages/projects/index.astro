@@ -20,7 +20,7 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft)).so
       ) : (
         <div class="project-grid">
           {projects.map((project) => (
-            <ProjectCard project={project} variant="full" />
+            <ProjectCard project={project} variant="full" headingLevel={2} />
           ))}
         </div>
       )

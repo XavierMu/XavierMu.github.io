@@ -57,10 +57,13 @@ const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
     margin-bottom: var(--space-5);
   }
 
+  /* 年份作为分组标签，与文章列表页的年份标题保持同一套样式 */
   .year-title {
-    font-size: var(--text-lg);
-    font-family: var(--font-serif);
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--fg-faint);
+    letter-spacing: 0.05em;
     padding-bottom: var(--space-1);
     border-bottom: 1px solid var(--line);
     margin-bottom: var(--space-2);

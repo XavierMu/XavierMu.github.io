@@ -25,10 +25,11 @@ const dateStr = pubDate.toLocaleDateString('zh-CN', {
   <a href={`/blog/${slug}`} class="post-link plain">
     <time class="post-date mono" datetime={pubDate.toISOString()}>{dateStr}</time>
     <div class="post-content">
-      <h2 class="post-title">
+      {/* 列表项标题用 h3：它从属于所在区块的 h2（如「最近文章」「2026」） */}
+      <h3 class="post-title">
         {title}
         {draft && <span class="draft-badge">草稿</span>}
-      </h2>
+      </h3>
       {showDescription && description && <p class="post-desc muted">{description}</p>}
     </div>
   </a>

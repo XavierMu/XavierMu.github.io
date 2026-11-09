@@ -7,17 +7,24 @@ import type { CollectionEntry } from 'astro:content';
 interface Props {
   project: CollectionEntry<'projects'>;
   variant?: 'compact' | 'full';
+  /**
+   * 标题层级：
+   * - 首页（在「项目」h2 区块下）用 3
+   * - 项目列表页（页面主内容）用 2
+   */
+  headingLevel?: 2 | 3;
 }
 
-const { project, variant = 'compact' } = Astro.props;
+const { project, variant = 'compact', headingLevel = 3 } = Astro.props;
 const { title, description, year, role, status, stack, repo, demo } = project.data;
 const slug = project.id.replace(/\.(md|mdx)$/, '');
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
 ---
 
 <article class:list={['project-card', variant]}>
   <a href={`/projects/${slug}`} class="card-link plain">
     <div class="card-head">
-      <h2 class="card-title">{title}</h2>
+      <Heading class="card-title">{title}</Heading>
       <span class="card-year mono">{year}</span>
     </div>
 
@@ -85,7 +92,8 @@ const slug = project.id.replace(/\.(md|mdx)$/, '');
 
   .card-title {
     font-size: var(--text-base);
-    font-weight: 600;
+    /* 与文章列表项标题保持同一字重 */
+    font-weight: 500;
     font-family: var(--font-sans);
   }
 
