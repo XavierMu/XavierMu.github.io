@@ -113,6 +113,12 @@ h4 {
   line-height: var(--leading-heading);
   letter-spacing: 0.01em;
   text-wrap: balance;
+  /*
+   * 中文标题不按字断开，只在标点/括号处换行。
+   * 否则「（手机端）」会被拆成「（手 / 机端）」。
+   */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- 焦点可见性（无障碍） ---------- */

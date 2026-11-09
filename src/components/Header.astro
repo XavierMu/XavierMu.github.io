@@ -147,10 +147,13 @@ function isActive(href: string): boolean {
     }
   }
 
+  /*
+   * 窄屏：全部导航项都显示，靠缩小字号与间距适应。
+   * 实测 6 项在 14px/24px 间距下需 338px，390px 屏幕可用 370px。
+   */
   @media (max-width: 720px) {
-    /* 窄屏只保留核心导航，次要项隐藏（仍可从文章页/404 页到达） */
-    .nav-link.secondary {
-      display: none;
+    .nav {
+      gap: var(--space-2);
     }
     .nav-link {
       font-size: var(--text-sm);
@@ -162,10 +165,23 @@ function isActive(href: string): boolean {
       height: 56px;
     }
     .nav {
-      gap: var(--space-2);
+      gap: 0.75rem;
+    }
+    .nav-link {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* 极窄屏（<360px）：进一步压缩，保证 6 项仍能一行放下 */
+  @media (max-width: 360px) {
+    .nav {
+      gap: 0.6rem;
     }
     .nav-link {
       font-size: var(--text-xs);
+    }
+    .theme-toggle {
+      padding: 0.3em;
     }
   }
 </style>
