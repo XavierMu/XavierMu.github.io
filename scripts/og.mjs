@@ -29,9 +29,43 @@ function readFrontmatter(file) {
   return { title: get('title'), description: get('description') };
 }
 
-/** 按字符数粗略折行，中文 16 字/行，最多 3 行 */
-function wrapTitle(title) {
-  const maxPerLine = 16;
+const TITLE_PX = 1000; // 1200 - 88*2 的可用宽度，再留一点余量
+const ASCII_RE = /[\x00-\xff]/;
+const BREAK_PUNCT = '，。：；、—？！';
+/** 估算字符串宽度（单位 em）：ASCII 约 0.55，中文按 1 */
+const emOf = (s) => [...s].reduce((w, c) => w + (ASCII_RE.test(c) ? 0.55 : 1), 0);
+
+/**
+ * 分享图标题排版：优先单行（自动缩字号），放不下再在标点处断成两行。
+ * 之前按固定 16 字折行，会和单行 70px 的预算打架——15 个字就溢出，
+ * 于是浏览器自己乱断，出现「……以守望先锋 / 为例」这种孤字行。
+ */
+function layoutTitle(title) {
+  const total = emOf(title);
+  const oneLine = Math.min(70, Math.floor(TITLE_PX / total));
+  if (oneLine >= 48) return { lines: [title], size: oneLine };
+
+  let best = null;
+  for (let i = 0; i < title.length - 1; i++) {
+    if (!BREAK_PUNCT.includes(title[i])) continue;
+    let cut = i + 1;
+    // 连续标点一起留在上一行，别让「：」跑到下一行行首
+    while (cut < title.length && BREAK_PUNCT.includes(title[cut])) cut++;
+    const a = title.slice(0, cut);
+    const b = title.slice(cut);
+    if (!b.trim()) continue;
+    const size = Math.min(64, Math.floor(TITLE_PX / Math.max(emOf(a), emOf(b))));
+    if (size < 40) continue;
+    const score = Math.abs(emOf(a) - emOf(b));
+    if (!best || score < best.score) best = { lines: [a, b], size, score };
+  }
+  if (best) return best;
+
+  return { lines: wrapTitle(title, 15), size: 52 };
+}
+
+/** 按字符数粗略折行，最多 3 行（给没有合适标点的长标题兜底） */
+function wrapTitle(title, maxPerLine = 16) {
   if (title.length <= maxPerLine) return [title];
 
   const lines = [];
@@ -72,7 +106,7 @@ const esc = (s) =>
 
 /** 文章图模板 */
 function articleHtml({ title, description }) {
-  const lines = wrapTitle(title);
+  const { lines, size } = layoutTitle(title);
   const titleHtml = lines.map((l) => esc(l)).join('<br />');
 
   return `<!doctype html>
@@ -84,7 +118,7 @@ body{background:#fdfdfc;color:#1a1a1a;font-family:"Noto Serif SC","Songti SC","S
 .rule{position:absolute;top:0;left:88px;right:88px;height:1px;background:#e5e4e2}
 .brand{font-size:28px;font-weight:600;letter-spacing:.02em}
 .main{flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px}
-.title{font-size:${lines.length >= 3 ? 58 : lines.length === 2 ? 64 : 70}px;font-weight:600;line-height:1.28;letter-spacing:.01em}
+.title{font-size:${size}px;font-weight:600;line-height:1.28;letter-spacing:.01em}
 .desc{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:24px;color:#6b6b6b;line-height:1.5;max-width:960px}
 .footer{display:flex;justify-content:space-between;align-items:baseline;
   font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:20px;color:#9e9e9e}
