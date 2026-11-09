@@ -61,6 +61,11 @@
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --duration: 150ms;
 
+  /* ---------- 背景点阵 ---------- */
+  --dot-color: #d8d6d2;
+  --dot-size: 24px;
+  --dot-opacity: 0.55;
+
   color-scheme: light;
 }
 
@@ -79,6 +84,9 @@
   --code-bg: #1a1a1a;
   --code-border: #2a2a2a;
 
+  /* 深色下的点阵：比浅色略亮一点，保持可见但不刺眼 */
+  --dot-color: #2f2f2f;
+
   color-scheme: dark;
 }
 
@@ -95,6 +103,8 @@
 
     --code-bg: #1a1a1a;
     --code-border: #2a2a2a;
+
+    --dot-color: #2f2f2f;
 
     color-scheme: dark;
   }

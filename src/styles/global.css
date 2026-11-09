@@ -47,6 +47,40 @@ body {
     color var(--duration) var(--ease);
 }
 
+/*
+ * 背景点阵：极淡的圆点网格，顶部向下渐隐。
+ * 用 fixed + 伪元素实现，不参与文档流，也不影响布局与滚动性能。
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: var(--dot-size) var(--dot-size);
+  opacity: var(--dot-opacity);
+  /* 顶部清晰、向下渐隐，避免整页都是点 */
+  mask-image: radial-gradient(ellipse 90% 65% at 50% 0%, #000 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 65% at 50% 0%, #000 35%, transparent 100%);
+  transition: opacity var(--duration) var(--ease);
+}
+
+/* 内容层叠在点阵之上 */
+.site-header,
+.site-main,
+.site-footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* 尊重用户的「减少动效」偏好：不显示纹理 */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    display: none;
+  }
+}
+
 img,
 picture,
 video,
