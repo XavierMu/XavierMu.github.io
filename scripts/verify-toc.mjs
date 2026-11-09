@@ -18,9 +18,10 @@ const ok = (n, c, d = '') => {
 const tocVisible = await page.isVisible('.toc');
 ok('目录在大屏可见', tocVisible);
 
-// 2. 条目数
+// 2. 条目数应与正文 h2 数量一致
 const count = await page.$$eval('[data-toc-target]', (a) => a.length);
-ok('目录条目数 = h2 数 8', count === 8, `实际 ${count}`);
+const h2Count = await page.$$eval('.prose h2', (a) => a.length);
+ok('目录条目数 = 正文 h2 数', count === h2Count, `目录 ${count} / h2 ${h2Count}`);
 
 // 3. 初始状态有一个 active
 const initActive = await page.$$eval('.toc-link.is-active', (a) => a.map((x) => x.dataset.tocTarget));
