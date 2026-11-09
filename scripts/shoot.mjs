@@ -9,9 +9,12 @@ const targets = [
   { path: '/', name: 'home', full: false },
   { path: '/', name: 'home-full', full: true },
   { path: '/blog', name: 'blog' },
-  { path: '/blog/raft-log-replication', name: 'post' },
+  { path: '/blog/sdust-webvpn-guide', name: 'post-webvpn' },
+  { path: '/blog/tvbox-tutorial', name: 'post-tvbox' },
   { path: '/projects', name: 'projects' },
-  { path: '/projects/mini-kv', name: 'project-detail' },
+  { path: '/projects/sdust-webvpn', name: 'project-detail' },
+  { path: '/tags', name: 'tags' },
+  { path: '/archive', name: 'archive' },
   { path: '/about', name: 'about' },
 ];
 

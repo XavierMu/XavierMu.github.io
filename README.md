@@ -146,9 +146,10 @@ git push
 ## 验证脚本
 
 ```bash
-node scripts/verify.mjs       # 主题切换、死链、h1、移动端溢出
-node scripts/verify-toc.mjs   # 目录：条目、锚点、滚动高亮、窄屏隐藏
-node scripts/shoot.mjs        # 截图到 .tmp/shots/
+node scripts/verify.mjs        # 主题切换、死链、h1、正文 Markdown 残留、移动端溢出
+node scripts/verify-toc.mjs    # 目录：条目、锚点、滚动高亮、窄屏隐藏
+node scripts/verify-gutter.mjs # 滚动条留白：各页 logo 左边缘是否一致
+node scripts/shoot.mjs         # 截图到 .tmp/shots/
 ```
 
-前两个依赖 `pnpm preview` 已在 4322 端口运行；截图脚本还需要 Playwright 的 Chromium。
+前三个依赖 `pnpm preview` 已在 4322 端口运行；截图脚本还需要 Playwright 的 Chromium。

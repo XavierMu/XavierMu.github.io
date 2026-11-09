@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection, getEntry, render } from 'astro:content';
 import Detail from '../../layouts/Detail.astro';
 import Icon from '../../components/Icon.astro';
 
@@ -14,7 +14,11 @@ export async function getStaticPaths() {
 
 const { project } = Astro.props;
 const { Content } = await render(project);
-const { title, description, year, role, status, stack, repo, demo } = project.data;
+const { title, description, year, role, status, stack, repo, demo, guide } = project.data;
+
+// 关联的使用教程：在 schema 里是 blog 集合的引用，这里换回条目本身
+const guideEntry = guide ? await getEntry(guide) : undefined;
+const guideHref = guideEntry ? `/blog/${guideEntry.id.replace(/\.(md|mdx)$/, '')}` : undefined;
 ---
 
 <Detail title={title} description={description}>
@@ -50,8 +54,14 @@ const { title, description, year, role, status, stack, repo, demo } = project.da
     </dl>
 
     {
-      (repo || demo) && (
+      (repo || demo || guideHref) && (
         <div class="project-links">
+          {guideHref && (
+            <a href={guideHref} class="ext-btn plain">
+              <Icon name="book" size={15} />
+              使用教程
+            </a>
+          )}
           {repo && (
             <a href={repo} class="ext-btn plain" rel="noopener" target="_blank">
               <Icon name="github" size={15} />

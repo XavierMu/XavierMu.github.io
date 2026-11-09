@@ -1,4 +1,4 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection, reference, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 /**
@@ -33,6 +33,8 @@ const projects = defineCollection({
     repo: z.string().url().optional(),
     /** 演示或下载地址 */
     demo: z.string().url().optional(),
+    /** 关联的使用教程（指向 blog 集合的条目 id） */
+    guide: reference('blog').optional(),
     /** 是否显示在首页 */
     featured: z.boolean().default(false),
     /** 排序，越小越靠前 */

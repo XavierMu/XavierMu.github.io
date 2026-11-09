@@ -6,6 +6,7 @@ role: 独立开发
 status: 维护中
 stack: [Tauri 2, Rust, Windows]
 repo: https://github.com/XavierMu/sdust-webvpn-desktop
+guide: sdust-webvpn-guide
 featured: true
 order: 1
 ---

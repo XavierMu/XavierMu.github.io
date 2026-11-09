@@ -1,4 +1,4 @@
-﻿import { chromium } from 'playwright';
+import { chromium } from 'playwright';
 
 const BASE = 'http://localhost:4322';
 const browser = await chromium.launch();
@@ -48,13 +48,31 @@ for (const href of links) {
 check('站内链接无死链', broken.length === 0, broken.join(', ') || `${links.length} 个链接`);
 
 // ---------- 单 h1 / 语义 ----------
-for (const p of ['/', '/blog', '/about', '/blog/raft-log-replication']) {
+for (const p of ['/', '/blog', '/about', '/blog/sdust-webvpn-guide']) {
   await page.goto(BASE + p, { waitUntil: 'networkidle' });
   const h1 = await page.$$eval('h1', (els) => els.length);
   const lang = await page.getAttribute('html', 'lang');
   check(`${p} 有且仅有一个 h1`, h1 === 1, `h1=${h1}`);
   check(`${p} lang 属性正确`, lang === 'zh-CN', String(lang));
 }
+
+// ---------- 正文 Markdown 残留 ----------
+// 中文紧贴 ** 时 CommonMark 可能不认emphasis，会在页面上露出字面 **，构建不报错
+const residual = [];
+for (const p of [
+  '/blog/sdust-webvpn-guide',
+  '/blog/tvbox-tutorial',
+  '/blog/clash-verge-tutorial',
+  '/blog/windows-install-tutorial',
+]) {
+  await page.goto(BASE + p, { waitUntil: 'networkidle' });
+  const text = await page.evaluate(
+    () => document.querySelector('.prose')?.innerText ?? ''
+  );
+  const hits = ['**', '{%', '<!--', '](http'].filter((m) => text.includes(m));
+  if (hits.length) residual.push(`${p}: ${hits.join(' ')}`);
+}
+check('正文无 Markdown 残留', residual.length === 0, residual.join('; ') || 'ok');
 
 // ---------- 键盘可达性 ----------
 await page.goto(BASE + '/', { waitUntil: 'networkidle' });
