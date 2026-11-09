@@ -17,6 +17,13 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /*
+   * 始终为竖向滚动条预留空间。
+   * 否则「内容长的页」（有滚动条）与「内容短的页」（无滚动条）
+   * 可用宽度相差一个滚动条宽度，导致整页（含顶栏）左右偏移 15~17px，
+   * 切换页面时能看到明显跳动。
+   */
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
