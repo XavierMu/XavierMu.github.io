@@ -140,9 +140,10 @@ const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
 
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 480px));
+    /* 用 1fr 而不是固定上限：auto-fill 按轨道 max 算列数，
+       写成 minmax(320px, 480px) 时 760px 只排得下 1 列，两张卡片会竖着堆 */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--space-3);
-    justify-content: start;
   }
 
   /* ---------- 右栏 ---------- */

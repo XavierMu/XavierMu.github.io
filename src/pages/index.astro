@@ -242,8 +242,8 @@ const topTags = tagList.slice(0, 8);
 
   .project-grid {
     display: grid;
-    /* 与项目列表页保持一致：卡片不无限拉伸 */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 400px));
+    /* auto-fit + 固定上限：两张卡片并排铺满整行，只有一张时也不会被拉宽 */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 480px));
     gap: var(--space-2);
     justify-content: start;
   }
