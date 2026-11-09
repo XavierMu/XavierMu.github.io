@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
-import { getSortedPosts, groupByMonth } from '../utils/posts';
+import { getSortedPosts, groupByMonth, countTags } from '../utils/posts';
 
 const posts = await getSortedPosts(getCollection);
 const grouped = groupByMonth(posts);
@@ -12,47 +12,145 @@ const MONTHS = [
   '七月', '八月', '九月', '十月', '十一月', '十二月',
 ];
 
-const fmtDay = (d: Date) =>
-  String(d.getDate()).padStart(2, '0');
-
+const fmtDay = (d: Date) => String(d.getDate()).padStart(2, '0');
 const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
+
+// 右栏：每年文章数
+const perYear = grouped.map(([year, months]) => ({
+  year,
+  count: months.reduce((n, [, list]) => n + list.length, 0),
+}));
+const total = posts.length;
+
+// 右栏：全部标签（最多 8 个）
+const tags = countTags(posts).slice(0, 8);
 ---
 
 <Base title="归档" description="全部文章按时间归档。">
-  <div class="container">
-    <PageHeader title="归档" description={`共 ${posts.length} 篇`} />
+  <div class="archive">
+    <div class="archive-main">
+      <PageHeader title="归档" description={`共 ${posts.length} 篇`} />
+
+      {
+        grouped.length === 0 ? (
+          <p class="muted empty">还没有文章。</p>
+        ) : (
+          grouped.map(([year, months]) => (
+            <section class="year-block">
+              <h2 class="year-title mono">{year}</h2>
+
+              {months.map(([month, list]) => (
+                <div class="month-block">
+                  <h3 class="month-title">{MONTHS[month]}</h3>
+                  <ul class="month-list">
+                    {list.map((post) => (
+                      <li>
+                        <a href={`/blog/${slugOf(post.id)}`} class="entry">
+                          <span class="entry-day mono">{fmtDay(post.data.pubDate)}</span>
+                          <span class="entry-title">{post.data.title}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </section>
+          ))
+        )
+      }
+    </div>
 
     {
-      grouped.length === 0 ? (
-        <p class="muted empty">还没有文章。</p>
-      ) : (
-        grouped.map(([year, months]) => (
-          <section class="year-block">
-            <h2 class="year-title mono">{year}</h2>
+      posts.length > 0 && (
+        <aside class="archive-aside">
+          <section class="side-block">
+            <h2 class="side-title">每年</h2>
+            <ul class="side-list">
+              {perYear.map(({ year, count }) => (
+                <li>
+                  <span class="side-name mono">{year}</span>
+                  <span class="side-count">{count}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-            {months.map(([month, list]) => (
-              <div class="month-block">
-                <h3 class="month-title">{MONTHS[month]}</h3>
-                <ul class="month-list">
-                  {list.map((post) => (
+          {
+            tags.length > 0 && (
+              <section class="side-block">
+                <h2 class="side-title">标签</h2>
+                <ul class="side-tags">
+                  {tags.map(([tag, count]) => (
                     <li>
-                      <a href={`/blog/${slugOf(post.id)}`} class="entry">
-                        <span class="entry-day mono">{fmtDay(post.data.pubDate)}</span>
-                        <span class="entry-title">{post.data.title}</span>
+                      <a href={`/blog/tag/${tag}`} class="side-link">
+                        {tag}<span class="side-count">{count}</span>
                       </a>
                     </li>
                   ))}
                 </ul>
-              </div>
-            ))}
+              </section>
+            )
+          }
+
+          <section class="side-block">
+            <h2 class="side-title">统计</h2>
+            <ul class="side-list">
+              <li>
+                <span class="side-name">文章</span>
+                <span class="side-count">{total}</span>
+              </li>
+              <li>
+                <span class="side-name">标签</span>
+                <span class="side-count">{tags.length}</span>
+              </li>
+            </ul>
           </section>
-        ))
+        </aside>
       )
     }
   </div>
 </Base>
 
 <style>
+  .archive {
+    width: 100%;
+    max-width: var(--width-container);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+
+  @media (min-width: 768px) {
+    .archive {
+      padding-inline: var(--space-4);
+    }
+  }
+
+  .archive-main {
+    min-width: 0;
+  }
+
+  .archive-aside {
+    display: none;
+  }
+
+  @media (min-width: 1280px) {
+    .archive {
+      grid-template-columns: minmax(0, 1fr) var(--width-aside);
+      column-gap: var(--gap-aside);
+      align-items: start;
+    }
+
+    .archive-aside {
+      display: block;
+      position: sticky;
+      top: calc(64px + var(--space-4));
+      font-size: var(--text-sm);
+    }
+  }
+
   .year-block {
     margin-bottom: var(--space-5);
   }
@@ -109,6 +207,68 @@ const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
   .entry-title {
     font-size: var(--text-base);
     transition: color var(--duration) var(--ease);
+  }
+
+  /* ---------- 右栏 ---------- */
+  .side-block + .side-block {
+    margin-top: var(--space-4);
+  }
+
+  .side-title {
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--fg-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-2);
+  }
+
+  .side-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  .side-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .side-tags {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  .side-link {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
+    text-decoration-color: var(--line-strong);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .side-link:hover {
+    color: var(--fg);
+  }
+
+  .side-name {
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
+  }
+
+  .side-count {
+    color: var(--fg-faint);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
   }
 
   .empty {

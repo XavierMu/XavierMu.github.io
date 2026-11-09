@@ -57,9 +57,11 @@ function isActive(href: string): boolean {
     position: sticky;
     top: 0;
     z-index: 40;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /*
+     * 顶栏用实心底色：滚动时内容不会透过导航形成重影。
+     * 下方有分隔线区分边界，不需要半透明。
+     */
+    background: var(--bg);
   }
 
   .header-inner {

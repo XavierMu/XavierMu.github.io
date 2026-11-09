@@ -5,17 +5,33 @@ import PostList from '../components/PostList.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
 import { site } from '../data/site';
+import { countTags, groupByYear, readingTime } from '../utils/posts';
+
+const allPosts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
 
 // 过滤草稿，按日期倒序
-const posts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, site.home.recentPostsCount);
+const posts = allPosts.slice(0, site.home.recentPostsCount);
 
 // 首页只展示精选项目
 const projects = (await getCollection('projects', ({ data }) => !data.draft))
   .filter((p) => p.data.featured)
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 6);
+
+// 站点概览：文章数、标签数、总字数、起始年份
+const tagList = countTags(allPosts);
+const years = groupByYear(allPosts);
+const firstYear = years.length > 0 ? years[years.length - 1][0] : null;
+const totalMinutes = allPosts.reduce(
+  (sum, p) => sum + readingTime(p.body ?? p.data.description),
+  0
+);
+
+// 标签云：取前 8 个，字号随数量微缩放
+const maxTagCount = Math.max(...tagList.map(([, c]) => c), 1);
+const topTags = tagList.slice(0, 8);
 ---
 
 <Base isHome={true}>
@@ -77,6 +93,67 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
           {projects.map((project) => (
             <ProjectCard project={project} variant="compact" />
           ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 站点概览 + 标签 -->
+  {
+    allPosts.length > 0 && (
+      <section class="section container">
+        <div class="overview">
+          <div class="overview-stats">
+            <h2 class="section-title">站点概览</h2>
+            <dl class="stats-grid">
+              <div class="stat">
+                <dt>文章</dt>
+                <dd class="mono">{allPosts.length}</dd>
+              </div>
+              <div class="stat">
+                <dt>标签</dt>
+                <dd class="mono">{tagList.length}</dd>
+              </div>
+              <div class="stat">
+                <dt>阅读</dt>
+                <dd class="mono">{totalMinutes}<span class="unit">分钟</span></dd>
+              </div>
+              {firstYear && (
+                <div class="stat">
+                  <dt>始于</dt>
+                  <dd class="mono">{firstYear}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          {topTags.length > 0 && (
+            <div class="overview-tags">
+              <div class="section-head">
+                <h2 class="section-title">标签</h2>
+                <a href="/tags" class="section-more plain">
+                  全部 <Icon name="arrow" size={14} />
+                </a>
+              </div>
+              <ul class="tag-mini">
+                {topTags.map(([tag, count]) => {
+                  const scale = 1 + (count / maxTagCount) * 0.25;
+                  return (
+                    <li>
+                      <a
+                        href={`/blog/tag/${tag}`}
+                        class="tag-mini-item"
+                        style={`font-size:${scale.toFixed(2)}em`}
+                      >
+                        {tag}
+                        <span class="tag-mini-count">{count}</span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       </section>
     )
@@ -169,6 +246,90 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft))
     grid-template-columns: repeat(auto-fill, minmax(280px, 400px));
     gap: var(--space-2);
     justify-content: start;
+  }
+
+  /* ---------- 站点概览 ---------- */
+  .overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 860px) {
+    .overview {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+      align-items: start;
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
+    margin: 0;
+    margin-top: var(--space-3);
+  }
+
+  @media (min-width: 520px) {
+    .stats-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .stat dt {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.3em;
+  }
+
+  .stat dd {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-family: var(--font-serif);
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .stat .unit {
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    color: var(--fg-faint);
+    margin-left: 0.25em;
+  }
+
+  /* ---------- 首页标签 ---------- */
+  .tag-mini {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em 1em;
+    margin-top: var(--space-3);
+  }
+
+  .tag-mini-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3em;
+    font-family: var(--font-serif);
+    color: var(--fg-muted);
+    text-decoration-color: var(--line-strong);
+    line-height: 1.5;
+    transition: color var(--duration) var(--ease);
+  }
+
+  .tag-mini-item:hover {
+    color: var(--fg);
+  }
+
+  .tag-mini-count {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
   }
 
   @media (max-width: 640px) {

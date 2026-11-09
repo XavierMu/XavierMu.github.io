@@ -7,47 +7,138 @@ import { getSortedPosts, countTags } from '../utils/posts';
 const posts = await getSortedPosts(getCollection);
 const tags = countTags(posts);
 
-// 按数量分组，用于视觉分层
 const max = Math.max(...tags.map(([, c]) => c), 1);
+
+// 右栏：文章最多的标签（前 5）
+const topTags = tags.slice(0, 5);
+
+// 右栏：最近被用到的标签（按最新文章出现顺序）
+const recentTags: string[] = [];
+for (const post of posts) {
+  for (const t of post.data.tags) {
+    if (!recentTags.includes(t)) recentTags.push(t);
+    if (recentTags.length >= 6) break;
+  }
+  if (recentTags.length >= 6) break;
+}
 ---
 
 <Base title="标签" description="全部文章标签，按文章数量排序。">
-  <div class="container">
-    <PageHeader title="标签" description={`共 ${tags.length} 个`} />
+  <div class="tags">
+    <div class="tags-main">
+      <PageHeader title="标签" description={`共 ${tags.length} 个`} />
+
+      {
+        tags.length === 0 ? (
+          <p class="muted empty">还没有标签。</p>
+        ) : (
+          <ul class="tag-cloud">
+            {tags.map(([tag, count]) => {
+              const scale = 1 + (count / max) * 0.35;
+              return (
+                <li>
+                  <a href={`/blog/tag/${tag}`} class="tag-item">
+                    <span class="tag-name" style={`font-size:${scale.toFixed(2)}em`}>
+                      {tag}
+                    </span>
+                    <span class="tag-count mono">{count}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )
+      }
+    </div>
 
     {
-      tags.length === 0 ? (
-        <p class="muted empty">还没有标签。</p>
-      ) : (
-        <ul class="tag-cloud">
-          {tags.map(([tag, count]) => {
-            // 字号随数量微调，但幅度很小，避免视觉噪音
-            const scale = 1 + (count / max) * 0.35;
-            return (
-              <li>
-                <a href={`/blog/tag/${tag}`} class="tag-item">
-                  <span class="tag-name" style={`font-size:${scale.toFixed(2)}em`}>
+      tags.length > 0 && (
+        <aside class="tags-aside">
+          <section class="side-block">
+            <h2 class="side-title">最多使用</h2>
+            <ul class="side-list">
+              {topTags.map(([tag, count]) => (
+                <li>
+                  <a href={`/blog/tag/${tag}`} class="side-link">
                     {tag}
-                  </span>
-                  <span class="tag-count mono">{count}</span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
+                  </a>
+                  <span class="side-count">{count}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section class="side-block">
+            <h2 class="side-title">最近新增</h2>
+            <ul class="side-list">
+              {recentTags.map((tag) => (
+                <li>
+                  <a href={`/blog/tag/${tag}`} class="side-link">
+                    {tag}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section class="side-block">
+            <h2 class="side-title">说明</h2>
+            <p class="side-note">
+              标签字号随文章数量缩放，用得越多的标签字号越大。
+            </p>
+          </section>
+        </aside>
       )
     }
   </div>
 </Base>
 
 <style>
+  .tags {
+    width: 100%;
+    max-width: var(--width-container);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+
+  @media (min-width: 768px) {
+    .tags {
+      padding-inline: var(--space-4);
+    }
+  }
+
+  .tags-main {
+    min-width: 0;
+  }
+
+  .tags-aside {
+    display: none;
+  }
+
+  @media (min-width: 1280px) {
+    .tags {
+      grid-template-columns: minmax(0, 1fr) var(--width-aside);
+      column-gap: var(--gap-aside);
+      align-items: start;
+    }
+
+    .tags-aside {
+      display: block;
+      position: sticky;
+      top: calc(64px + var(--space-4));
+      font-size: var(--text-sm);
+    }
+  }
+
   .tag-cloud {
     list-style: none;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    /* 以 14px 为基准，tag-name 的 em 缩放才有参照 */
     font-size: var(--text-sm);
   }
 
@@ -55,7 +146,6 @@ const max = Math.max(...tags.map(([, c]) => c), 1);
     display: inline-flex;
     align-items: baseline;
     gap: 0.4em;
-    /* 高度随字号变化，用 em 控制内距保证比例一致 */
     padding: 0.5em 0.95em;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -78,6 +168,58 @@ const max = Math.max(...tags.map(([, c]) => c), 1);
   .tag-count {
     font-size: var(--text-xs);
     color: var(--fg-faint);
+  }
+
+  /* ---------- 右栏 ---------- */
+  .side-block + .side-block {
+    margin-top: var(--space-4);
+  }
+
+  .side-title {
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--fg-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-2);
+  }
+
+  .side-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55em;
+  }
+
+  .side-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .side-link {
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
+    text-decoration-color: var(--line-strong);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .side-link:hover {
+    color: var(--fg);
+  }
+
+  .side-count {
+    color: var(--fg-faint);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .side-note {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    line-height: 1.7;
   }
 
   .empty {

@@ -8,33 +8,181 @@ const projects = (await getCollection('projects', ({ data }) => !data.draft)).so
   if (a.data.order !== b.data.order) return a.data.order - b.data.order;
   return b.data.year - a.data.year;
 });
+
+// 右栏：技术栈汇总
+const stackCounts = new Map<string, number>();
+for (const p of projects) {
+  for (const tech of p.data.stack) {
+    stackCounts.set(tech, (stackCounts.get(tech) ?? 0) + 1);
+  }
+}
+const stacks = [...stackCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+// 右栏：状态分布
+const byStatus = new Map<string, number>();
+for (const p of projects) {
+  const s = p.data.status;
+  byStatus.set(s, (byStatus.get(s) ?? 0) + 1);
+}
+const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
 ---
 
 <Base title="项目" description="做过的项目：解决的问题、采用的技术与结果。">
-  <div class="container">
-    <PageHeader title="项目" description={`共 ${projects.length} 个`} />
+  <div class="projects">
+    <div class="projects-main">
+      <PageHeader title="项目" description={`共 ${projects.length} 个`} />
+
+      {
+        projects.length === 0 ? (
+          <p class="muted empty">还没有项目。</p>
+        ) : (
+          <div class="project-grid">
+            {projects.map((project) => (
+              <ProjectCard project={project} variant="full" headingLevel={2} />
+            ))}
+          </div>
+        )
+      }
+    </div>
 
     {
-      projects.length === 0 ? (
-        <p class="muted empty">还没有项目。</p>
-      ) : (
-        <div class="project-grid">
-          {projects.map((project) => (
-            <ProjectCard project={project} variant="full" headingLevel={2} />
-          ))}
-        </div>
+      projects.length > 0 && (
+        <aside class="projects-aside">
+          {stacks.length > 0 && (
+            <section class="side-block">
+              <h2 class="side-title">技术栈</h2>
+              <ul class="side-list">
+                {stacks.map(([tech, count]) => (
+                  <li>
+                    <span class="side-name mono">{tech}</span>
+                    <span class="side-count">{count}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section class="side-block">
+            <h2 class="side-title">状态</h2>
+            <ul class="side-list">
+              {statuses.map(([status, count]) => (
+                <li>
+                  <span class="side-name">{status}</span>
+                  <span class="side-count">{count}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section class="side-block">
+            <h2 class="side-title">年份</h2>
+            <ul class="side-list">
+              {
+                [...new Set(projects.map((p) => p.data.year))]
+                  .sort((a, b) => b - a)
+                  .map((year) => (
+                    <li>
+                      <span class="side-name mono">{year}</span>
+                      <span class="side-count">
+                        {projects.filter((p) => p.data.year === year).length}
+                      </span>
+                    </li>
+                  ))
+              }
+            </ul>
+          </section>
+        </aside>
       )
     }
   </div>
 </Base>
 
 <style>
+  .projects {
+    width: 100%;
+    max-width: var(--width-container);
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+
+  @media (min-width: 768px) {
+    .projects {
+      padding-inline: var(--space-4);
+    }
+  }
+
+  .projects-main {
+    min-width: 0;
+  }
+
+  .projects-aside {
+    display: none;
+  }
+
+  /* 大屏：主内容 + 右侧统计栏，与文章详情页同一套栅格 */
+  @media (min-width: 1280px) {
+    .projects {
+      grid-template-columns: minmax(0, 1fr) var(--width-aside);
+      column-gap: var(--gap-aside);
+      align-items: start;
+    }
+
+    .projects-aside {
+      display: block;
+      position: sticky;
+      top: calc(64px + var(--space-4));
+      font-size: var(--text-sm);
+    }
+  }
+
   .project-grid {
     display: grid;
-    /* 卡片不无限拉伸：最多 2 列，每列上限 480px */
     grid-template-columns: repeat(auto-fill, minmax(320px, 480px));
     gap: var(--space-3);
     justify-content: start;
+  }
+
+  /* ---------- 右栏 ---------- */
+  .side-block + .side-block {
+    margin-top: var(--space-4);
+  }
+
+  .side-title {
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--fg-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-2);
+  }
+
+  .side-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  .side-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .side-name {
+    color: var(--fg-muted);
+    font-size: var(--text-xs);
+  }
+
+  .side-count {
+    color: var(--fg-faint);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
   }
 
   .empty {
