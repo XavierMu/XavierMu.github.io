@@ -12,8 +12,6 @@ export interface SocialLink {
 export interface NavItem {
   label: string;
   href: string;
-  /** 次要项：窄屏时隐藏，避免导航拥挤 */
-  secondary?: boolean;
 }
 
 export const site = {
@@ -39,11 +37,11 @@ export const site = {
 
   nav: [
     { label: '文章', href: '/blog' },
-    { label: '归档', href: '/archive', secondary: true },
-    { label: '标签', href: '/tags', secondary: true },
+    { label: '归档', href: '/archive' },
+    { label: '标签', href: '/tags' },
     { label: '项目', href: '/projects' },
     { label: '关于', href: '/about' },
-    { label: '搜索', href: '/search', secondary: true },
+    { label: '搜索', href: '/search' },
   ] as NavItem[],
 
   home: {

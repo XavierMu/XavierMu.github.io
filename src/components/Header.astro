@@ -26,11 +26,7 @@ function isActive(href: string): boolean {
         site.nav.map((item) => (
           <a
             href={item.href}
-            class:list={[
-              'nav-link',
-              'plain',
-              { active: isActive(item.href), secondary: item.secondary },
-            ]}
+            class:list={['nav-link', 'plain', { active: isActive(item.href) }]}
             aria-current={isActive(item.href) ? 'page' : undefined}
           >
             {item.label}
@@ -78,6 +74,15 @@ function isActive(href: string): boolean {
     font-weight: 600;
     letter-spacing: 0.01em;
     flex-shrink: 0;
+    /* 站点名就是首页入口：它没有独立的导航项，靠 hover 下划线说明可点 */
+    text-underline-offset: 5px;
+    transition: text-decoration-color var(--duration) var(--ease);
+  }
+
+  .brand:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--fg);
   }
 
   .nav {
@@ -151,7 +156,8 @@ function isActive(href: string): boolean {
 
   /*
    * 窄屏：全部导航项都显示，靠缩小字号与间距适应。
-   * 实测 6 项在 14px/24px 间距下需 338px，390px 屏幕可用 370px。
+   * 实测 6 项在 14px/24px 间距下需 339px；390px 屏幕下（14px/12px）需 267px、可用 283px。
+   * 这已是顶栏容量上限——再加一项会在 390px 处零余量、320px 处放不下。
    */
   @media (max-width: 720px) {
     .nav {
