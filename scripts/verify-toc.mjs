@@ -5,7 +5,7 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
 
-const url = `${BASE}/blog/clash-verge-tutorial`;
+const url = `${BASE}/blog/proxy-client-tutorial`;
 await page.goto(url, { waitUntil: 'networkidle' });
 
 const results = [];

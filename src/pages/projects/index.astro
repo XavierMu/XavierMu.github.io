@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
+import { copy } from '../../data/site';
 
 const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort((a, b) => {
   if (a.data.order !== b.data.order) return a.data.order - b.data.order;
@@ -27,14 +28,14 @@ for (const p of projects) {
 const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
 ---
 
-<Base title="项目" description="做过的项目：解决的问题、采用的技术与结果。">
+<Base title={copy.projects.title} description={copy.projects.description}>
   <div class="projects">
     <div class="projects-main">
-      <PageHeader title="项目" description={`共 ${projects.length} 个`} />
+      <PageHeader title={copy.projects.title} description={copy.projects.count(projects.length)} />
 
       {
         projects.length === 0 ? (
-          <p class="muted empty">还没有项目。</p>
+          <p class="muted empty">{copy.projects.empty}</p>
         ) : (
           <div class="project-grid">
             {projects.map((project) => (
@@ -50,7 +51,7 @@ const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
         <aside class="projects-aside">
           {stacks.length > 0 && (
             <section class="side-block">
-              <h2 class="side-title">技术栈</h2>
+              <h2 class="side-title">{copy.projects.aside.stack}</h2>
               <ul class="side-list">
                 {stacks.map(([tech, count]) => (
                   <li>
@@ -63,7 +64,7 @@ const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
           )}
 
           <section class="side-block">
-            <h2 class="side-title">状态</h2>
+            <h2 class="side-title">{copy.projects.aside.status}</h2>
             <ul class="side-list">
               {statuses.map(([status, count]) => (
                 <li>
@@ -75,7 +76,7 @@ const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
           </section>
 
           <section class="side-block">
-            <h2 class="side-title">年份</h2>
+            <h2 class="side-title">{copy.projects.aside.years}</h2>
             <ul class="side-list">
               {
                 [...new Set(projects.map((p) => p.data.year))]
@@ -94,10 +95,20 @@ const statuses = [...byStatus.entries()].sort((a, b) => b[1] - a[1]);
         </aside>
       )
     }
+
+    <p class="back">
+      <a href="/" class="plain muted">← 返回首页</a>
+    </p>
   </div>
 </Base>
 
 <style>
+  /* 与标签页、项目详情页保持同一套底部返回样式 */
+  .back {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+
   .projects {
     width: 100%;
     max-width: var(--width-container);

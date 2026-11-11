@@ -43,4 +43,17 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { blog, projects };
+/**
+ * 单页正文（目前只有「关于」）。
+ * 放进集合是为了和文章共用一套 .prose 排版，改文案不用碰模板。
+ */
+const pages = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/pages' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().max(160),
+    updatedDate: z.coerce.date().optional(),
+  }),
+});
+
+export const collections = { blog, projects, pages };

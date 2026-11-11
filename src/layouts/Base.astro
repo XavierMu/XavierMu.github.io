@@ -22,6 +22,8 @@ interface Props {
   publishedAt?: Date;
   updatedAt?: Date;
   tags?: string[];
+  /** 告诉搜索引擎不要收录本页（404 这类页面用） */
+  noindex?: boolean;
 }
 
 const {
@@ -33,6 +35,7 @@ const {
   publishedAt,
   updatedAt,
   tags = [],
+  noindex = false,
 } = Astro.props;
 
 const pageTitle = isHome ? site.title : title ? `${title} · ${site.title}` : site.title;
@@ -78,6 +81,7 @@ const jsonLd = isHome
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
     <link rel="canonical" href={canonical} />
     <meta name="generator" content={Astro.generator} />
 

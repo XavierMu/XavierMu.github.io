@@ -13,17 +13,21 @@ const year = new Date().getFullYear();
 
     <div class="footer-right">
       {
-        site.social.map((link) => (
-          <a
-            href={link.href}
-            class="social-link plain"
-            aria-label={link.label}
-            title={link.label}
-            rel={link.href.startsWith('http') ? 'noopener' : undefined}
-          >
-            <Icon name={link.icon} size={16} />
-          </a>
-        ))
+        site.social.map((link) => {
+          const isExt = link.href.startsWith('http');
+          return (
+            <a
+              href={link.href}
+              class="social-link plain"
+              aria-label={link.label}
+              title={link.label}
+              rel={isExt ? 'noopener noreferrer' : undefined}
+              target={isExt ? '_blank' : undefined}
+            >
+              <Icon name={link.icon} size={16} />
+            </a>
+          );
+        })
       }
     </div>
   </div>

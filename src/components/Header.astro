@@ -96,6 +96,8 @@ function isActive(href: string): boolean {
     color: var(--fg-muted);
     transition: color var(--duration) var(--ease);
     padding-block: 0.25em;
+    /* 极窄屏下不许把「文章」拆成「文 / 章」两行 */
+    white-space: nowrap;
   }
 
   .nav-link:hover {
@@ -158,6 +160,7 @@ function isActive(href: string): boolean {
    * 窄屏：全部导航项都显示，靠缩小字号与间距适应。
    * 实测 6 项在 14px/24px 间距下需 339px；390px 屏幕下（14px/12px）需 267px、可用 283px。
    * 这已是顶栏容量上限——再加一项会在 390px 处零余量、320px 处放不下。
+   * 320px 实测：字号降到 12px、间距 0.6rem 时刚好单行放下（6 项合计约 132px）。
    */
   @media (max-width: 720px) {
     .nav {
@@ -182,6 +185,9 @@ function isActive(href: string): boolean {
 
   /* 极窄屏（<360px）：进一步压缩，保证 6 项仍能一行放下 */
   @media (max-width: 360px) {
+    .header-inner {
+      gap: var(--space-1);
+    }
     .nav {
       gap: 0.6rem;
     }

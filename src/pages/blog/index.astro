@@ -1,29 +1,31 @@
-﻿---
+---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostList from '../../components/PostList.astro';
+import { copy } from '../../data/site';
+import { effectiveDate, sortByRecentlyUpdated } from '../../utils/posts';
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+// 按最近更新倒序：旧文重写后会回到列表顶部
+const posts = sortByRecentlyUpdated(await getCollection('blog', ({ data }) => !data.draft));
 
-// 按年份分组
+// 按「最近更新」的年份分组，与列表里显示的日期保持一致
 const byYear = new Map<number, typeof posts>();
 for (const post of posts) {
-  const y = post.data.pubDate.getFullYear();
+  const y = effectiveDate(post).getFullYear();
   if (!byYear.has(y)) byYear.set(y, []);
   byYear.get(y)!.push(post);
 }
 const years = [...byYear.keys()].sort((a, b) => b - a);
 ---
 
-<Base title="文章" description="技术文章、论文笔记与工程实践。">
+<Base title={copy.blog.title} description={copy.blog.description}>
   <div class="container">
-    <PageHeader title="文章" description={`共 ${posts.length} 篇`} />
+    <PageHeader title={copy.blog.title} description={copy.blog.count(posts.length)} />
 
     {
       posts.length === 0 ? (
-        <p class="muted empty">还没有文章。</p>
+        <p class="muted empty">{copy.blog.empty}</p>
       ) : (
         years.map((year) => (
           <section class="year-group">
@@ -37,6 +39,10 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
         ))
       )
     }
+
+    <p class="back">
+      <a href="/" class="plain muted">← 返回首页</a>
+    </p>
   </div>
 </Base>
 
@@ -55,5 +61,11 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
 
   .empty {
     padding-block: var(--space-5);
+  }
+
+  /* 与归档页、标签页、项目列表页保持同一套底部返回样式 */
+  .back {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
   }
 </style>

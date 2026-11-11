@@ -3,6 +3,8 @@ import { getCollection } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import PageHeader from '../../../components/PageHeader.astro';
 import PostList from '../../../components/PostList.astro';
+import { sortByRecentlyUpdated } from '../../../utils/posts';
+import { copy } from '../../../data/site';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
@@ -16,19 +18,21 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.props;
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft && data.tags.includes(tag)))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const posts = sortByRecentlyUpdated(
+  await getCollection('blog', ({ data }) => !data.draft && data.tags.includes(tag))
+);
 ---
 
-<Base title={`标签：${tag}`} description={`标签「${tag}」下的全部文章。`}>
+<Base title={copy.tagPage.title(tag)} description={copy.tagPage.description(tag)}>
   <div class="container">
-    <PageHeader title={`#${tag}`} description={`共 ${posts.length} 篇`} />
+    <PageHeader title={`#${tag}`} description={copy.tagPage.count(posts.length)} />
 
     <div class="post-list">
       {posts.map((post) => <PostList post={post} />)}
     </div>
 
     <p class="back">
+      <a href="/tags" class="plain muted">← 标签列表</a>
       <a href="/blog" class="plain muted">← 全部文章</a>
     </p>
   </div>
@@ -36,6 +40,9 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.tag
 
 <style>
   .back {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
     margin-top: var(--space-4);
     font-size: var(--text-sm);
   }

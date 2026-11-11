@@ -2,12 +2,33 @@ import type { CollectionEntry } from 'astro:content';
 
 export type Post = CollectionEntry<'blog'>;
 
-/** 取全部非草稿文章，按发布日期倒序 */
+/** 取全部非草稿文章，按发布日期倒序（归档、标签页的时间线视角） */
 export async function getSortedPosts(
   getCollection: (name: 'blog', filter?: (p: Post) => boolean) => Promise<Post[]>
 ): Promise<Post[]> {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+}
+
+/**
+ * 列表排序与展示用的时间。
+ * 旧文重写后发布日期仍是旧的，只改 updatedDate，所以「最近」要看更新日期。
+ */
+export function effectiveDate(post: Post): Date {
+  return post.data.updatedDate ?? post.data.pubDate;
+}
+
+/**
+ * 按「最近更新」倒序。
+ * 同一天更新的按发布日期从早到晚排，这样系列文章（前一章发布时间更早）
+ * 在列表里仍然是前置在前，不会因为更新时间相同被打乱。
+ */
+export function sortByRecentlyUpdated(posts: Post[]): Post[] {
+  return [...posts].sort(
+    (a, b) =>
+      effectiveDate(b).valueOf() - effectiveDate(a).valueOf() ||
+      a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+  );
 }
 
 /** 标签 -> 文章数，按数量倒序 */

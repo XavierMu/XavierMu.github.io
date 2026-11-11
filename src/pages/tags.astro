@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import { getSortedPosts, countTags } from '../utils/posts';
+import { copy } from '../data/site';
 
 const posts = await getSortedPosts(getCollection);
 const tags = countTags(posts);
@@ -23,14 +24,14 @@ for (const post of posts) {
 }
 ---
 
-<Base title="标签" description="全部文章标签，按文章数量排序。">
+<Base title={copy.tags.title} description={copy.tags.description}>
   <div class="tags">
     <div class="tags-main">
-      <PageHeader title="标签" description={`共 ${tags.length} 个`} />
+      <PageHeader title={copy.tags.title} description={copy.tags.count(tags.length)} />
 
       {
         tags.length === 0 ? (
-          <p class="muted empty">还没有标签。</p>
+          <p class="muted empty">{copy.tags.empty}</p>
         ) : (
           <ul class="tag-cloud">
             {tags.map(([tag, count]) => {
@@ -55,7 +56,7 @@ for (const post of posts) {
       tags.length > 0 && (
         <aside class="tags-aside">
           <section class="side-block">
-            <h2 class="side-title">最多使用</h2>
+            <h2 class="side-title">{copy.tags.aside.top}</h2>
             <ul class="side-list">
               {topTags.map(([tag, count]) => (
                 <li>
@@ -69,7 +70,7 @@ for (const post of posts) {
           </section>
 
           <section class="side-block">
-            <h2 class="side-title">最近新增</h2>
+            <h2 class="side-title">{copy.tags.aside.recent}</h2>
             <ul class="side-list">
               {recentTags.map((tag) => (
                 <li>
@@ -82,18 +83,28 @@ for (const post of posts) {
           </section>
 
           <section class="side-block">
-            <h2 class="side-title">说明</h2>
+            <h2 class="side-title">{copy.tags.aside.note}</h2>
             <p class="side-note">
-              标签字号随文章数量缩放，用得越多的标签字号越大。
+              {copy.tags.note}
             </p>
           </section>
         </aside>
       )
     }
+
+    <p class="back">
+      <a href="/blog" class="plain muted">← 全部文章</a>
+    </p>
   </div>
 </Base>
 
 <style>
+  /* 与归档页、项目列表页保持同一套底部返回样式 */
+  .back {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+
   .tags {
     width: 100%;
     max-width: var(--width-container);

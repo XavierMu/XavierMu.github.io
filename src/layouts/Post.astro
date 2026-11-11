@@ -53,6 +53,8 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   <header slot="header" class="post-header">
     <h1 class="post-title">{title}</h1>
 
+    {description && <p class="post-desc">{description}</p>}
+
     <div class="post-meta">
       <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
       {readingTime && (
@@ -103,6 +105,43 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   </footer>
 </Detail>
 
+<!-- 长图在正文里限高显示，点开在这个层里按原尺寸看 -->
+<dialog class="img-zoom" id="img-zoom" aria-label="放大查看图片">
+  <button type="button" class="img-zoom-close" aria-label="关闭">×</button>
+  <img alt="" />
+</dialog>
+
+<script>
+  const zoom = document.getElementById('img-zoom') as HTMLDialogElement | null;
+  const zoomImg = zoom?.querySelector('img');
+  const zoomClose = zoom?.querySelector('button');
+
+  if (zoom && zoomImg) {
+    for (const img of document.querySelectorAll<HTMLImageElement>('.prose img')) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', () => {
+        zoomImg.src = img.currentSrc || img.src;
+        zoomImg.alt = img.alt;
+        if (!zoom.open) zoom.showModal();
+      });
+    }
+
+    // 点图片本身、点四周留白、点右上角按钮都关；Esc 由 dialog 自带。
+    // 但拖动过就不算点击——长图在手机上靠拖动滚动，那一拖不该把层关掉。
+    let downX = 0;
+    let downY = 0;
+    zoom.addEventListener('pointerdown', (event) => {
+      downX = event.clientX;
+      downY = event.clientY;
+    });
+    zoom.addEventListener('click', (event) => {
+      if (Math.hypot(event.clientX - downX, event.clientY - downY) > 8) return;
+      if (event.target === zoom || event.target === zoomImg) zoom.close();
+    });
+    zoomClose?.addEventListener('click', () => zoom.close());
+  }
+</script>
+
 <style>
   .post-header {
     margin-bottom: var(--space-4);
@@ -111,6 +150,20 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   .post-title {
     font-size: var(--text-2xl);
     margin-bottom: var(--space-2);
+  }
+
+  /*
+   * 导语：文章 description 在页面上的呈现。
+   * 它原本只进 <meta>，分享卡片和搜索结果里可见，读了全文反而看不到。
+   * 这里用 --fg-muted 与 --text-base，和标题（2xl/深色）、元信息（sm/更淡）拉开三档层次。
+   */
+  .post-desc {
+    font-size: var(--text-base);
+    line-height: 1.7;
+    color: var(--fg-muted);
+    margin-bottom: var(--space-2);
+    max-width: 52ch;
+    text-wrap: pretty;
   }
 
   .post-meta {

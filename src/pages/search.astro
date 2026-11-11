@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
+import { copy } from '../data/site';
 ---
 
-<Base title="搜索" description="站内全文搜索。">
+<Base title={copy.search.title} description={copy.search.description}>
   <div class="container">
-    <PageHeader title="搜索" description="支持中文分词，输入关键词即可。" />
+    <PageHeader title={copy.search.title} description={copy.search.hint} />
 
     <!-- Pagefind UI 挂载点 -->
     <div id="search" class="search-root"></div>

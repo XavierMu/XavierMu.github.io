@@ -4,14 +4,12 @@ import Base from '../layouts/Base.astro';
 import PostList from '../components/PostList.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
-import { site } from '../data/site';
-import { countTags, groupByYear, readingTime } from '../utils/posts';
+import { site, copy } from '../data/site';
+import { countTags, groupByYear, readingTime, sortByRecentlyUpdated } from '../utils/posts';
 
-const allPosts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
+const allPosts = sortByRecentlyUpdated(await getCollection('blog', ({ data }) => !data.draft));
 
-// 过滤草稿，按日期倒序
+// 最近文章：按最近更新倒序（旧文重写也算「新」）
 const posts = allPosts.slice(0, site.home.recentPostsCount);
 
 // 首页只展示精选项目
@@ -44,18 +42,22 @@ const topTags = tagList.slice(0, 8);
 
     <ul class="hero-social">
       {
-        site.social.map((link) => (
-          <li>
-            <a
-              href={link.href}
-              class="social-link plain"
-              rel={link.href.startsWith('http') ? 'noopener' : undefined}
-            >
-              <Icon name={link.icon} size={15} />
-              <span>{link.label}</span>
-            </a>
-          </li>
-        ))
+        site.social.map((link) => {
+          const isExt = link.href.startsWith('http');
+          return (
+            <li>
+              <a
+                href={link.href}
+                class="social-link plain"
+                rel={isExt ? 'noopener noreferrer' : undefined}
+                target={isExt ? '_blank' : undefined}
+              >
+                <Icon name={link.icon} size={15} />
+                <span>{link.label}</span>
+              </a>
+            </li>
+          );
+        })
       }
     </ul>
   </section>
@@ -65,9 +67,9 @@ const topTags = tagList.slice(0, 8);
     posts.length > 0 && (
       <section class="section container">
         <div class="section-head">
-          <h2 class="section-title">最近文章</h2>
+          <h2 class="section-title">{copy.home.recentPosts}</h2>
           <a href="/blog" class="section-more plain">
-            全部 <Icon name="arrow" size={14} />
+            {copy.home.all} <Icon name="arrow" size={14} />
           </a>
         </div>
         <div class="post-list">
@@ -84,9 +86,9 @@ const topTags = tagList.slice(0, 8);
     site.home.showFeaturedProjects && projects.length > 0 && (
       <section class="section container">
         <div class="section-head">
-          <h2 class="section-title">项目</h2>
+          <h2 class="section-title">{copy.home.projects}</h2>
           <a href="/projects" class="section-more plain">
-            全部 <Icon name="arrow" size={14} />
+            {copy.home.all} <Icon name="arrow" size={14} />
           </a>
         </div>
         <div class="project-grid">
@@ -104,23 +106,23 @@ const topTags = tagList.slice(0, 8);
       <section class="section container">
         <div class="overview">
           <div class="overview-stats">
-            <h2 class="section-title">站点概览</h2>
+            <h2 class="section-title">{copy.home.overview}</h2>
             <dl class="stats-grid">
               <div class="stat">
-                <dt>文章</dt>
+                <dt>{copy.home.stats.posts}</dt>
                 <dd class="mono">{allPosts.length}</dd>
               </div>
               <div class="stat">
-                <dt>标签</dt>
+                <dt>{copy.home.stats.tags}</dt>
                 <dd class="mono">{tagList.length}</dd>
               </div>
               <div class="stat">
-                <dt>阅读</dt>
-                <dd class="mono">{totalMinutes}<span class="unit">分钟</span></dd>
+                <dt>{copy.home.stats.reading}</dt>
+                <dd class="mono">{totalMinutes}<span class="unit">{copy.home.stats.minutes}</span></dd>
               </div>
               {firstYear && (
                 <div class="stat">
-                  <dt>始于</dt>
+                  <dt>{copy.home.stats.since}</dt>
                   <dd class="mono">{firstYear}</dd>
                 </div>
               )}
@@ -132,7 +134,7 @@ const topTags = tagList.slice(0, 8);
               <div class="section-head">
                 <h2 class="section-title">标签</h2>
                 <a href="/tags" class="section-more plain">
-                  全部 <Icon name="arrow" size={14} />
+                  {copy.home.all} <Icon name="arrow" size={14} />
                 </a>
               </div>
               <ul class="tag-mini">

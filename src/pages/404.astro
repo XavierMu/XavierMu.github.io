@@ -1,30 +1,30 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { copy } from '../data/site';
+import { sortByRecentlyUpdated } from '../utils/posts';
 
 // 列出最近的几篇，给走错路的访客一个落脚点
-const recent = (await getCollection('blog', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, 3);
+const recent = sortByRecentlyUpdated(await getCollection('blog', ({ data }) => !data.draft)).slice(0, 3);
 
 const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
 ---
 
-<Base title="404 · 页面不存在" description="你要找的页面不存在。">
+<Base title={copy.notFound.title} description={copy.notFound.description} noindex>
   <div class="container notfound">
     <p class="code mono faint">404</p>
-    <h1 class="title">页面不存在</h1>
-    <p class="muted">链接可能已失效，或者这个页面还没写。</p>
+    <h1 class="title">{copy.notFound.heading}</h1>
+    <p class="muted">{copy.notFound.body}</p>
 
     <nav class="links" aria-label="常用入口">
-      <a href="/" class="entry">首页</a>
-      <a href="/blog" class="entry">全部文章</a>
-      <a href="/archive" class="entry">归档</a>
-      <a href="/tags" class="entry">标签</a>
+      <a href="/" class="entry">{copy.notFound.links.home}</a>
+      <a href="/blog" class="entry">{copy.notFound.links.posts}</a>
+      <a href="/archive" class="entry">{copy.notFound.links.archive}</a>
+      <a href="/tags" class="entry">{copy.notFound.links.tags}</a>
       {
         recent.length > 0 && (
           <a href={`/blog/${slugOf(recent[0].id)}`} class="entry">
-            最近一篇
+            {copy.notFound.links.latest}
           </a>
         )
       }
@@ -33,7 +33,7 @@ const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
     {
       recent.length > 0 && (
         <section class="recent">
-          <h2 class="recent-title">也许你想看</h2>
+          <h2 class="recent-title">{copy.notFound.recentTitle}</h2>
           <ul class="recent-list">
             {recent.map((post) => (
               <li>
@@ -108,17 +108,22 @@ const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6em;
+    gap: 0.5em;
     font-size: var(--text-sm);
   }
 
   .recent-list a {
     color: var(--fg-muted);
-    text-decoration-color: var(--line-strong);
     transition: color var(--duration) var(--ease);
   }
 
   .recent-list a:hover {
     color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .notfound {
+      padding-block: var(--space-5);
+    }
   }
 </style>

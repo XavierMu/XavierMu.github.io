@@ -342,6 +342,17 @@ h4 {
   margin-inline: auto;
   /* 截图类图片不撑满正文列，避免观感压迫 */
   max-width: min(100%, 40rem);
+  /*
+   * 手机截图多是 1440×3168 这种竖长图，按宽度铺满会占掉一屏半。
+   * 限高后按比例缩放，宽度自然会收到 300px 上下，所以必须配点击放大，
+   * 否则就是把「太长」换成「看不清」。
+   *
+   * width: auto 不能省。img 标签上的 width 属性会让宽度先被 max-width 定成
+   * 640px，height 再被 max-height 砍到 640px，两边都不按比例 —— 图会被压扁。
+   * 交回 auto 之后浏览器才走「宽高同时超限、按原比例缩」那条规则。
+   */
+  max-height: 40rem;
+  width: auto;
   height: auto;
 }
 
@@ -365,6 +376,71 @@ h4 {
 
 [data-theme='dark'] .prose img {
   filter: brightness(0.9);
+}
+
+/* ---------- 长图点击放大 ---------- */
+.prose img.zoomable {
+  cursor: zoom-in;
+}
+
+/*
+ * 放大层用 <dialog>：Esc 关闭、焦点困在层内都是浏览器自带的。
+ * 长图在这里按「铺满宽度 + 上下滚动」显示，而不是 object-fit: contain——
+ * 1:2.2 的竖图若是缩到一屏高，字还是看不清，等于没放大。
+ */
+.img-zoom {
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: var(--space-2);
+  border: 0;
+  background: transparent;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.img-zoom::backdrop {
+  background: rgb(0 0 0 / 0.86);
+}
+
+/*
+ * 手机上 dialog 只有一屏宽，`width: 100%` 等于把正文里的图原地放一遍——
+ * 测过 375 屏：正文 312px，放大后还是 312px，1.00 倍。
+ * 所以给一个最小放大倍数，图可以横向拖动看细节；桌面端仍然受 72rem 上限约束。
+ */
+.img-zoom img {
+  display: block;
+  width: auto;
+  min-width: min(2.5 * 100%, 72rem);
+  max-width: 72rem;
+  height: auto;
+  margin-inline: auto;
+  border-radius: var(--radius);
+  cursor: zoom-out;
+}
+
+.img-zoom-close {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: #fff;
+  background: rgb(0 0 0 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.img-zoom-close:hover {
+  background: rgb(0 0 0 / 0.8);
 }
 
 /* ---------- 工具类 ---------- */

@@ -3,14 +3,12 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import { getSortedPosts, groupByMonth, countTags } from '../utils/posts';
+import { copy } from '../data/site';
 
 const posts = await getSortedPosts(getCollection);
 const grouped = groupByMonth(posts);
 
-const MONTHS = [
-  '一月', '二月', '三月', '四月', '五月', '六月',
-  '七月', '八月', '九月', '十月', '十一月', '十二月',
-];
+const MONTHS = copy.archive.months;
 
 const fmtDay = (d: Date) => String(d.getDate()).padStart(2, '0');
 const slugOf = (id: string) => id.replace(/\.(md|mdx)$/, '');
@@ -26,14 +24,14 @@ const total = posts.length;
 const tags = countTags(posts).slice(0, 8);
 ---
 
-<Base title="归档" description="全部文章按时间归档。">
+<Base title={copy.archive.title} description={copy.archive.description}>
   <div class="archive">
     <div class="archive-main">
-      <PageHeader title="归档" description={`共 ${posts.length} 篇`} />
+      <PageHeader title={copy.archive.title} description={copy.archive.count(posts.length)} />
 
       {
         grouped.length === 0 ? (
-          <p class="muted empty">还没有文章。</p>
+          <p class="muted empty">{copy.archive.empty}</p>
         ) : (
           grouped.map(([year, months]) => (
             <section class="year-block">
@@ -64,7 +62,7 @@ const tags = countTags(posts).slice(0, 8);
       posts.length > 0 && (
         <aside class="archive-aside">
           <section class="side-block">
-            <h2 class="side-title">每年</h2>
+            <h2 class="side-title">{copy.archive.aside.years}</h2>
             <ul class="side-list">
               {perYear.map(({ year, count }) => (
                 <li>
@@ -78,7 +76,7 @@ const tags = countTags(posts).slice(0, 8);
           {
             tags.length > 0 && (
               <section class="side-block">
-                <h2 class="side-title">标签</h2>
+                <h2 class="side-title">{copy.archive.aside.tags}</h2>
                 <ul class="side-tags">
                   {tags.map(([tag, count]) => (
                     <li>
@@ -93,14 +91,14 @@ const tags = countTags(posts).slice(0, 8);
           }
 
           <section class="side-block">
-            <h2 class="side-title">统计</h2>
+            <h2 class="side-title">{copy.archive.aside.stats}</h2>
             <ul class="side-list">
               <li>
-                <span class="side-name">文章</span>
+                <span class="side-name">{copy.archive.statLabels.posts}</span>
                 <span class="side-count">{total}</span>
               </li>
               <li>
-                <span class="side-name">标签</span>
+                <span class="side-name">{copy.archive.statLabels.tags}</span>
                 <span class="side-count">{tags.length}</span>
               </li>
             </ul>
@@ -108,10 +106,20 @@ const tags = countTags(posts).slice(0, 8);
         </aside>
       )
     }
+
+    <p class="back">
+      <a href="/blog" class="plain muted">← 全部文章</a>
+    </p>
   </div>
 </Base>
 
 <style>
+  /* 与标签页、项目列表页保持同一套底部返回样式 */
+  .back {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+
   .archive {
     width: 100%;
     max-width: var(--width-container);

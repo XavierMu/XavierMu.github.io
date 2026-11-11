@@ -1,79 +1,78 @@
 ---
+/**
+ * 关于页。
+ *
+ * 正文来自 `src/content/pages/about.md`，走 `.prose`——和文章页同一套排版，
+ * 改文案只改那个 md 文件，不用碰模板。右栏的联系方式与站点信息仍在这里渲染，
+ * 因为它们来自 site 配置、不属于「文章正文」。
+ */
+import { getEntry, render } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Icon from '../components/Icon.astro';
-import { site } from '../data/site';
+import { site, copy } from '../data/site';
+
+const entry = await getEntry('pages', 'about');
+if (!entry) {
+  throw new Error('缺少 src/content/pages/about.md，关于页无法渲染');
+}
+
+const { Content } = await render(entry);
+const { title, description } = entry.data;
+
+const pageDescription = description || copy.about.fallbackDescription(site.author);
+
+/** 右栏「本站」的三项元信息：改技术栈时同步这里 */
+const stack = [
+  { label: '构建', value: 'Astro' },
+  { label: '托管', value: 'GitHub Pages' },
+  { label: '字体', value: '系统字体栈' },
+];
 ---
 
-<Base title="关于" description={`关于 ${site.author}，以及这个站点写了些什么。`}>
+<Base title={title} description={pageDescription}>
   <div class="about">
     <div class="about-main">
-      <PageHeader title="关于" description="这个站写了什么，以及为什么这么写。" />
+      <PageHeader title={title} description={pageDescription} />
 
       <div class="prose about-body">
-        <section>
-          <h2>简介</h2>
-          <p>
-            我是 {site.author}。这里用来存放读过的书、写过的代码，
-            以及那些当时没弄明白、后来终于想清楚的事。
-          </p>
-          <p>
-            写作的原则很简单：写清楚自己卡在哪一步，而不是复述一份
-            看起来正确的说明书。所以这里的文章多半带着具体的坑和
-            不太体面的调试过程。
-          </p>
-        </section>
-
-        <section>
-          <h2>这里有什么</h2>
-          <ul>
-            <li>
-              <strong>文章</strong>：读书笔记、动手时遇到的问题、
-              以及一些不太成熟的思考。
-            </li>
-            <li>
-              <strong>项目</strong>：做过的练习与实验，重点写清楚
-              解决了什么问题、卡在哪里、回头会怎么改。
-            </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2>关于写作</h2>
-          <ul>
-            <li>不追求更新频率，宁可写得少，也要写得明白。</li>
-            <li>尽量给出能复现的步骤和具体的数字，少说空话。</li>
-            <li>如果发现旧文有错，会直接改，并注明更新日期。</li>
-          </ul>
-        </section>
+        <Content />
       </div>
     </div>
 
-    <!-- 右栏：联系 -->
     <aside class="about-side">
-      <h2 class="side-title">联系</h2>
+      <h2 class="side-title">{copy.about.aside.contact}</h2>
       <ul class="contact-list">
         {
-          site.social.map((link) => (
-            <li>
-              <a
-                href={link.href}
-                class="contact-link plain"
-                rel={link.href.startsWith('http') ? 'noopener' : undefined}
-              >
-                <Icon name={link.icon} size={15} />
-                <span>{link.label}</span>
-              </a>
-            </li>
-          ))
+          site.social.map((link) => {
+            const isExt = link.href.startsWith('http');
+            return (
+              <li>
+                <a
+                  href={link.href}
+                  class="contact-link plain"
+                  rel={isExt ? 'noopener noreferrer' : undefined}
+                  target={isExt ? '_blank' : undefined}
+                >
+                  <Icon name={link.icon} size={15} />
+                  <span>{link.label}</span>
+                </a>
+              </li>
+            );
+          })
         }
       </ul>
 
-      <h2 class="side-title">本站</h2>
+      <h2 class="side-title">{copy.about.aside.site}</h2>
       <ul class="site-info">
-        <li><span class="muted">构建</span> <span class="mono">Astro</span></li>
-        <li><span class="muted">托管</span> <span class="mono">GitHub Pages</span></li>
-        <li><span class="muted">字体</span> <span class="mono">系统字体栈</span></li>
+        {
+          stack.map((item) => (
+            <li>
+              <span class="muted">{item.label}</span>
+              <span class="mono">{item.value}</span>
+            </li>
+          ))
+        }
       </ul>
     </aside>
   </div>
@@ -104,25 +103,17 @@ import { site } from '../data/site';
     min-width: 0;
   }
 
-  .about-body section + section {
+  /*
+   * 正文交给 .prose 管，这里只补两处差异：
+   * 1. 关于页没有文章那种「首屏大标题 + 元信息」的间距需求，首个小节贴上边
+   * 2. h2 用区块级尺寸，与文章内的 h2 保持一致（.prose h2 已带下边框）
+   */
+  .about-body {
     margin-top: var(--space-4);
   }
 
-  .about-body h2 {
-    font-size: var(--text-lg);
-    margin-bottom: var(--space-2);
-  }
-
-  .about-body p + p {
-    margin-top: 1em;
-  }
-
-  .about-body ul {
-    padding-left: 1.2em;
-  }
-
-  .about-body li + li {
-    margin-top: 0.5em;
+  .about-body > :first-child {
+    margin-top: 0;
   }
 
   .about-side {

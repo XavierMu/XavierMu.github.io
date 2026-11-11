@@ -10,20 +10,36 @@ interface Props {
 }
 
 const { post, showDescription = true } = Astro.props;
-const { title, description, pubDate, draft } = post.data;
+const { title, description, pubDate, updatedDate, draft } = post.data;
 const slug = post.id.replace(/\.(md|mdx)$/, '');
 
-const dateStr = pubDate.toLocaleDateString('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  timeZone: 'Asia/Shanghai',
-}).replace(/\//g, '.');
+// 列表按「最近更新」排序，日期也要显示同一个口径，否则时间轴上看着是乱的
+const shownDate = updatedDate ?? pubDate;
+const isUpdated = Boolean(updatedDate && updatedDate.valueOf() !== pubDate.valueOf());
+
+const fmtDate = (d: Date) =>
+  d
+    .toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'Asia/Shanghai',
+    })
+    .replace(/\//g, '.');
+
+const dateStr = fmtDate(shownDate);
+const pubDateStr = fmtDate(pubDate);
 ---
 
 <article class="post-item">
   <a href={`/blog/${slug}`} class="post-link plain">
-    <time class="post-date mono" datetime={pubDate.toISOString()}>{dateStr}</time>
+    <time
+      class="post-date mono"
+      datetime={shownDate.toISOString()}
+      title={isUpdated ? `首次发布 ${pubDateStr}` : undefined}
+    >
+      {dateStr}{isUpdated && <span class="post-updated">更新</span>}
+    </time>
     <div class="post-content">
       {/* 列表项标题用 h3：它从属于所在区块的 h2（如「最近文章」「2026」） */}
       <h3 class="post-title">
@@ -62,6 +78,17 @@ const dateStr = pubDate.toLocaleDateString('zh-CN', {
     color: var(--fg-faint);
     white-space: nowrap;
     padding-top: 0.35em;
+  }
+
+  /* 「更新」标记：日期列宽度有限，用极小的角标，不做成胶囊 */
+  .post-updated {
+    margin-left: 0.45em;
+    padding: 0.05em 0.25em;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-size: 0.85em;
+    color: var(--fg-faint);
+    vertical-align: 0.05em;
   }
 
   .post-title {

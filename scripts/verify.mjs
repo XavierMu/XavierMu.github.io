@@ -62,7 +62,7 @@ const residual = [];
 for (const p of [
   '/blog/sdust-webvpn-guide',
   '/blog/tvbox-tutorial',
-  '/blog/clash-verge-tutorial',
+  '/blog/proxy-client-tutorial',
   '/blog/windows-install-tutorial',
 ]) {
   await page.goto(BASE + p, { waitUntil: 'networkidle' });

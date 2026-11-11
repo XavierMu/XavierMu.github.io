@@ -123,7 +123,8 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
   }
 
   .stack-item {
-    font-size: 0.7rem;
+    /* 原来是 0.7rem（11.2px），比字号阶梯最小的 12px 还小，提回阶梯 */
+    font-size: var(--text-xs);
     color: var(--fg-faint);
     border: 1px solid var(--line);
     border-radius: 3px;

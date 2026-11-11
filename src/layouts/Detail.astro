@@ -34,6 +34,29 @@ const {
 // 先把正文渲染成字符串，才能从中提取标题生成目录
 const bodyHtml = await Astro.slots.render('default');
 const headings = extractHeadings(bodyHtml, 2);
+
+/**
+ * 正文里的外部链接统一新窗口打开。
+ *
+ * 为什么在构建期做、而不是用 markdown.rehypePlugins：Astro 7 的默认 Markdown
+ * 处理器换成 Sätteri 后，那个钩子需要额外安装 @astrojs/markdown-remark；
+ * 为一条链接属性加一个构建依赖不划算。渲染后改字符串同样零依赖，而且
+ * 产物里就有 target，不依赖 JS——爬虫和禁用脚本的读者也能拿到正确行为。
+ */
+const SITE_HOST = 'xaviermu.github.io';
+
+function externalLinksBlank(html: string): string {
+  return html.replace(/<a\b([^>]*)>/g, (tag, attrs: string) => {
+    const href = attrs.match(/\bhref="([^"]*)"/)?.[1];
+    if (!href || !/^https?:\/\//i.test(href)) return tag;
+    if (href.includes(SITE_HOST)) return tag;
+    // 去掉作者可能已经写好的 target/rel，避免重复属性
+    const rest = attrs.replace(/\s(?:target|rel)="[^"]*"/g, '');
+    return `<a${rest} target="_blank" rel="noopener noreferrer">`;
+  });
+}
+
+const renderedBody = externalLinksBlank(bodyHtml);
 ---
 
 <Base
@@ -49,7 +72,7 @@ const headings = extractHeadings(bodyHtml, 2);
     <div class="detail-main">
       <slot name="header" />
 
-      <div class="prose detail-body" data-pagefind-body set:html={bodyHtml} />
+      <div class="prose detail-body" data-pagefind-body set:html={renderedBody} />
 
       <footer class="detail-footer">
         <slot name="footer" />
