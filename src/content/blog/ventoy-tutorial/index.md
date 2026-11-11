@@ -1,11 +1,12 @@
 ---
 title: "Ventoy 使用教程：一个 U 盘装下所有系统镜像"
-description: "U 盘只装一次，之后把 ISO 拖进去就能启动。要点、Secure Boot 的坑、以及它为什么不能替代 PE。"
-pubDate: 2026-11-10T18:49:29+08:00
-tags: ["电脑", "搞机"]
+description: "它替代不了 PE，也挡不住 Secure Boot。但一个 U 盘装下所有系统这件事，确实只有它能干。"
+pubDate: 2024-04-18
+updatedDate: 2026-11-11
+tags: ["电脑", "系统安装", "启动盘"]
 ---
 
-Rufus 和微PE 都有一个共同限制：一个 U 盘只能装一个系统。想再放一个 PE、
+[Rufus](https://rufus.ie/) 和 [微PE](https://www.wepe.com.cn/) 都有一个共同限制：一个 U 盘只能装一个系统。想再放一个 PE、
 或者另一个版本的 ISO，就得重新写一遍，原来那个连同 U 盘里的数据一起没了。
 
 Ventoy 换了个思路：**U 盘只装一次，之后往里复制 ISO 文件就行**。开机时它扫一遍 U 盘里的
@@ -84,10 +85,10 @@ TPM、Secure Boot、CPU 这几项检查会被自动跳过。
 
 ## Secure Boot 的坑
 
-这是用 Ventoy 最容易卡住的地方，值得单独说。
+这是用 Ventoy 最容易卡住的地方，值得单独说，[Ventoy 官方文档](https://www.ventoy.net/cn/doc_secure.html)里也专门有一节讲它。
 
 Ventoy 的引导程序基于 grub2，是 GPL 授权的，拿不到微软的 UEFI 签名。所以它借用了
-一个第三方 shim（来自 Rocky Linux），由 shim 来启动它。
+一个第三方 [shim](https://github.com/rhboot/shim)（来自 Rocky Linux），由 shim 来启动它。
 
 后果是：**在开着 Secure Boot 的机器上，第一次从 Ventoy 启动不会直接进菜单，而是先进
 MokManager**，要求你手动注册 Ventoy 的密钥。
@@ -107,7 +108,7 @@ MokManager**，要求你手动注册 Ventoy 的密钥。
 
 ### 两种安全策略
 
-Ventoy 提供两种 Secure Boot 策略，在 `ventoy/ventoy.json` 的全局控制里设：
+Ventoy 提供两种 Secure Boot 策略，在 `ventoy/ventoy.json` 的全局控制里设，字段含义见 [Ventoy 全局控制插件文档](https://www.ventoy.net/cn/plugin_control.html)：
 
 ```json
 {
@@ -123,7 +124,7 @@ Ventoy 提供两种 Secure Boot 策略，在 `ventoy/ventoy.json` 的全局控�
 | `1` | 遵循固件策略 | 只启动带签名的 EFI（如 Windows 的 `bootmgfw.efi`），部分功能受限但最安全 |
 
 默认的 `0` 等于把 Secure Boot 绕过了。装完系统记得把 U 盘拔了、机器本身的 Secure Boot
-恢复开启，别让它一直处于被绕过的状态。
+恢复开启，别让它一直处于被绕过的状态。另外，[微软的 Secure Boot 文档](https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-secure-boot)是这块最权威的参考。
 
 > 安全启动这件事本身，包括它到底拦什么、为什么有的 PE 进不去，
 > 见[进 PE 之前要不要关安全防护](/blog/disable-security-before-pe)。

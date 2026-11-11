@@ -2,7 +2,7 @@
 title: "MultiBooter 使用教程：手机就是万能启动盘"
 description: "不用 root 也能给 U 盘装 Ventoy；root 之后手机直接虚拟成 U 盘或光驱，还能 PXE 网络启动。"
 pubDate: 2026-11-10T18:58:42+08:00
-tags: ["电脑", "搞机", "安卓"]
+tags: ["安卓", "电脑", "启动盘"]
 ---
 
 U 盘总有不在手边的时候，手机一定在。MultiBooter 就是干这个的：让手机给电脑当启动盘，
@@ -26,7 +26,7 @@ U 盘总有不在手边的时候，手机一定在。MultiBooter 就是干这个
 | USB Gadget | 走 ConfigFS 暴露成 U 盘或光驱 | 是 |
 | 磁盘分析 | 查看分区、剩余空间、盘里的 ISO 列表 | 否 |
 
-前两项走的是 Android 的 USB Host API——手机当**主机**，U 盘插在手机上，
+前两项走的是 Android 的 [USB Host API](https://developer.android.com/guide/topics/connectivity/usb/host)——手机当**主机**，U 盘插在手机上，
 通过 SCSI 命令直接操作那块盘。所以不需要 root，也不需要碰 `/dev/sdX`。
 
 后几项走的是反方向：手机当**从设备**，把自己伪装成一块盘给电脑。这需要配置
@@ -34,14 +34,16 @@ Linux 的 ConfigFS / FunctionFS，必须 root。
 
 > 这一点是它和 DriveDroid 最大的区别。DriveDroid 只能做后一半，且必须 root。
 
+「必须 root」这件事本身得先解决：解锁 Bootloader、刷入 root 方案的完整流程写在[安卓解锁 BL 与 KernelSU root](/blog/android-unlock-bl-kernelsu)里，解锁会清空数据，代价清单也在那一篇。两条线是独立的——只想给 U 盘装 Ventoy 的话，完全不用碰 root。
+
 ## 装上
 
 Android 8.0 以上，四个 ABI 都支持。
 
 - **F-Droid**：搜 MultiBooter，或者直接装
   [包页面](https://f-droid.org/packages/com.werismoln.multibooter/)
-- **GitHub Releases**：下 APK
-- **Obtainium**：加仓库地址，自动跟踪更新
+- **GitHub Releases**：从 [MultiBooter 的 Releases 页](https://github.com/werimsoln/MultiBooter/releases)下 APK
+- **[Obtainium](https://github.com/ImranR98/Obtainium)**：加仓库地址，自动跟踪更新
 
 当前版本是 **v0.1.4**。虚拟 U 盘和磁盘分析是这一版才加的，v0.1.3 没有——
 如果你在 F-Droid 上装到的是旧版，界面上找不到「Virtual USB drive」就是这个原因。
@@ -125,8 +127,8 @@ mass storage 功能）把这个文件当作一块物理磁盘暴露给电脑。
 
 这个思路完全不一样：不走 USB，走网线。
 
-手机起一个 TFTP 服务（App 内置了 dnsmasq），电脑那边设置 PXE 网络启动，
-从手机加载引导文件。适合电脑 USB 口坏了、或者一次要给多台机器装系统的场合。
+手机起一个 TFTP 服务（App 内置了 [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html)），电脑那边设置 PXE 网络启动，
+从手机加载引导文件，PXE 客户端的配置可以看 [iPXE 文档](https://ipxe.org/howto/)。适合电脑 USB 口坏了、或者一次要给多台机器装系统的场合。
 
 需要手机和电脑在同一个局域网里，通常是手机开热点让电脑连。
 
@@ -144,7 +146,7 @@ mass storage 功能）把这个文件当作一块物理磁盘暴露给电脑。
 | 光驱模拟 | FunctionFS | 需第三方内核 |
 
 结论很直接：**新事情用 MultiBooter**。DriveDroid 在 Android 10 之后经常挂载失效，
-社区要靠 Magisk 脚本手动切 USB 功能，折腾成本高且不一定成。
+社区要靠 [Magisk](https://github.com/topjohnwu/Magisk) 脚本手动切 USB 功能，折腾成本高且不一定成。
 
 DriveDroid 唯一还值得提的地方是它历史更久、能查到的老教程多。但那些教程大多基于
 旧系统，照着做容易踩坑。

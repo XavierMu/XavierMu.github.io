@@ -3,7 +3,7 @@ title: "Windows 系统安装教程：从镜像到第一次进桌面"
 description: "官方镜像去哪下、启动盘怎么做、分区怎么选、Win11 门槛怎么过、装完收哪些尾，以及每一步翻车了怎么救。"
 pubDate: 2024-01-19
 updatedDate: 2026-11-10
-tags: ["电脑", "搞机"]
+tags: ["电脑", "系统安装"]
 ---
 
 装系统这件事本身不难，卡人的通常是几个岔路口：镜像从哪下才干净、U 盘里要不要先备份、
@@ -206,7 +206,7 @@ Get-FileHash .\Win11_25H2_Chinese_Simplified_x64.iso -Algorithm SHA256
 
 - **balenaEtcher** 界面比 Rufus 更傻瓜，跨平台，但功能和 Rufus 差不多，也没有绕过 Win11 检测的选项
 - **UltraISO** 老牌但停更多年，写 UEFI 启动盘经常出问题，不推荐
-- **Media Creation Tool** 是微软官方的，最干净，但只能做 Windows 安装盘，且下载的是最新版
+- **[Media Creation Tool](https://www.microsoft.com/software-download/windows11)** 是微软官方的，最干净，但只能做 Windows 安装盘，且下载的是最新版
 - **优启通、FirPE、Edgeless、HotPE** 都是 PE，和微PE同一类，界面和预装工具有差别。
   其中 HotPE 更偏「功能全集」，体积也大；FirPE 和 Edgeless 的可定制性更强
 
@@ -239,7 +239,7 @@ Get-FileHash .\Win11_25H2_Chinese_Simplified_x64.iso -Algorithm SHA256
 ### 方法二：用微PE做启动盘
 
 微PE是一个精简的 Windows 预安装环境。用它做出来的 U 盘不只是安装介质，里面是一个能
-启动的小系统，进去之后还能用分区工具、Dism++ 这些。
+启动的小系统，进去之后还能用分区工具、[Dism++](https://github.com/Chuyu-Team/Dism-Multi-language) 这些。
 
 到 [wepe.com.cn](https://www.wepe.com.cn/) 下载微PE工具箱，插入 U 盘，
 选「安装 PE 到 U 盘」，按向导走完。
@@ -283,8 +283,7 @@ Ventoy 换了个思路：U 盘只装一次，之后往里**复制 ISO 文件**�
 Rufus 或微PE 就够了。
 
 还有更极端的一种：连 U 盘都不带，**用手机当启动盘**。现在有不 root 就能给 U 盘装 Ventoy
-的工具，root 之后还能让手机直接虚拟成启动盘，
-见 [MultiBooter 使用教程](/blog/multibooter-tutorial)。
+的工具，root 之后还能让手机直接虚拟成启动盘，见 [MultiBooter 使用教程](/blog/multibooter-tutorial)。手机怎么拿到 root 是另一条线，见 [安卓解锁 BL 与 KernelSU root](/blog/android-unlock-bl-kernelsu)。
 
 ## 进 PE 之前，先处理安全防护
 
@@ -388,7 +387,7 @@ Rufus 或微PE 就够了。
 
 **情况四：要自己控制分区大小**
 
-在安装界面按 `Shift + F10` 调出命令行，用 `diskpart` 手动分区：
+在安装界面按 `Shift + F10` 调出命令行，用 `diskpart` 手动分区（[diskpart 命令参考](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/diskpart)）：
 
 ```
 diskpart
@@ -452,7 +451,7 @@ exit
 bcdboot C:\Windows /s S: /f UEFI /l zh-cn
 ```
 
-`/f UEFI` 对应 GPT 硬盘；MBR 硬盘改 `/f BIOS`，并且省略 `/s S:`，直接写进 C 盘。
+`/f UEFI` 对应 GPT 硬盘；MBR 硬盘改 `/f BIOS`，并且省略 `/s S:`，直接写进 C 盘。参数含义见 [bcdboot 命令行选项](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdboot-command-line-options-techref-di)。
 `C:` 是刚释放镜像的那个分区盘符，PE 里盘符不一定和平时一样，用 `dir` 确认一下。
 
 连 ESP 都没有的盘，得先自己建一个：`diskpart` 里 `clean` 之后
@@ -525,7 +524,7 @@ start ms-cxh:localonly
 
 1. **Windows Update**：联网后跑一遍，显卡、网卡、芯片组多数能自动装上
 2. **主板或笔记本官网**：芯片组、声卡、读卡器、指纹这些冷门驱动去官网下对应型号的
-3. **显卡官网**：NVIDIA / AMD / Intel 官方驱动，比 Windows Update 的版本新
+3. **显卡官网**：[NVIDIA 官方驱动](https://www.nvidia.com/en-us/drivers/) / AMD / Intel，比 Windows Update 的版本新
 
 如果是新笔记本，**装系统前**先在官网把 Wi-Fi 驱动下到 U 盘里。有些新网卡 Win11 自带驱动里没有，
 装完没网又下不了驱动，就成了死循环。忘了也没关系，用手机 USB 共享网络破局。
@@ -595,7 +594,7 @@ Intel 11 代以后的笔记本常见。BIOS 里存储模式默认是 RAID 或 VM
 改成 AHCI，保存重启。已经在用这块盘的系统会因此无法启动，但反正是重装，无所谓。
 
 **加载驱动。** 保持 VMD 不变，去主板或笔记本官网下载「Intel Rapid Storage Technology
-驱动」，解压到 U 盘。安装程序分区界面点「加载驱动程序」，选那个文件夹里的 `.inf`。
+驱动」，解压到 U 盘。安装程序分区界面点「加载驱动程序」，选那个文件夹里的 `.inf`。官方驱动见 [Intel Rapid Storage Technology 下载页](https://www.intel.com/content/www/us/en/download/849936/intel-rapid-storage-technology-driver-installation-software-with-intel-optane-memory.html)。
 这样装完系统能直接用 VMD 模式，性能更好，也避免以后改设置又蓝屏。
 
 新机器我建议第二种。

@@ -1,8 +1,9 @@
 ---
 title: "进 PE 之前要不要关安全防护：Secure Boot、BitLocker 和杀软各挡在哪"
 description: "网上说「进 PE 要关杀毒、关安全启动」，其实混了四件事。哪一层真的拦你、哪一层只是让你读不到数据、关完怎么恢复。"
-pubDate: 2026-11-10T17:59:55+08:00
-tags: ["电脑", "搞机"]
+pubDate: 2024-02-06
+updatedDate: 2026-11-11
+tags: ["电脑", "启动盘", "安全"]
 ---
 
 装系统、修引导、抢救数据，绕不开进 PE。而一搜「进 PE」，几乎每篇教程都会带一句
@@ -30,7 +31,7 @@ tags: ["电脑", "搞机"]
 
 ### 它在校验什么
 
-Secure Boot 是 UEFI 规范里的一环。开机的顺序大概是：
+Secure Boot 是 UEFI 规范里的一环，[微软 Secure Boot 文档](https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-secure-boot) 有完整说明。开机的顺序大概是：
 
 ```
 通电 → UEFI 固件 → 读取 ESP 分区的 bootx64.efi
@@ -80,7 +81,7 @@ Win11 把 Secure Boot 列为硬性要求，长期关着会影响后续的大版�
 
 ## BitLocker：不挡启动，挡你的数据
 
-这一层经常被误认为「安全防护拦住了 PE」，其实它拦的不是启动，是你打开硬盘的那一刻。
+这一层经常被误认为「安全防护拦住了 PE」，其实它拦的不是启动，是你打开硬盘的那一刻。完整机制见 [BitLocker 官方文档](https://learn.microsoft.com/en-us/windows/security/operating-system-security/data-protection/bitlocker/)。
 
 ### 会看到什么
 
@@ -99,7 +100,7 @@ Win11 把 Secure Boot 列为硬性要求，长期关着会影响后续的大版�
 2. **打印出来的纸**：第一次开启加密时，向导会问要不要打印
 3. **U 盘或其它分区的 `.txt` 文件**：向导也提供「保存到文件」
 4. **工作或学校账户**：加入域的机器由管理员保管
-5. **`manage-bde -protectors -get C:`**：能进系统时在命令行里直接查
+5. **`manage-bde -protectors -get C:`**：能进系统时在命令行里直接查，参数含义见 [manage-bde 命令文档](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/manage-bde)
 
 48 位数字，分成 8 组。输进去就能解锁，不需要真的解密整块盘。
 
@@ -160,7 +161,7 @@ Dism++ 释放到一半卡住。这些都不是软件坏了，是杀软在半路�
 
 注意这一步经常关不掉，开关是灰的或者自动弹回——因为**篡改防护**在起作用：
 
-4. 先回到「病毒和威胁防护设置」，找到「篡改防护」，关掉它
+4. 先回到「病毒和威胁防护设置」，找到「篡改防护」，关掉它，说明见 [篡改防护文档](https://learn.microsoft.com/en-us/defender-endpoint/prevent-changes-to-security-settings-with-tamper-protection)
 5. 再回去关实时保护
 
 实时保护关掉后，Windows 会在重启或一段时间后自动帮你打开，这正好是想要的行为——

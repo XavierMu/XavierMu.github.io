@@ -2,16 +2,15 @@
 title: SDUST WebVPN 使用教程：在校外直接用校内地址
 description: 从安装到配置的完整步骤，以及最容易踩的那个坑——系统代理和环境变量是两套东西。
 pubDate: 2026-11-09
-tags: [工具, 网络, 教程]
+updatedDate: 2026-11-11
+tags: ["网络代理"]
 ---
 
-学校用的是**网瑞达 WebVPN**（clientless 反向代理），所有资源都会被改写成
-`https://webvpn.sdust.edu.cn/https/<hex>/<path>` 这种形式，只能在门户里一个个点开。
+学校用的是[**网瑞达 WebVPN**](https://www.wrdtech.com/)（clientless 反向代理）。它的工作方式是：你连上门户之后，门户把校内每个页面改写成 `https://webvpn.sdust.edu.cn/https/<hex>/<path>` 这种带前缀的地址，再由它转发进来。
 
-在校外写代码时这很别扭：`git clone` 要手动复制改写后的地址，`pip install` 校内源要改
-index-url，页面里的链接、302 跳转全是 webvpn 前缀，登录态过期还得重新输入。
+麻烦就出在这一层改写上。在校外要看校内网页——查通知、上教务、进图书馆下文献——都得先登录[学校 WebVPN 门户](https://webvpn.sdust.edu.cn)，再从门户里一个个点进去。页面打开了也不算完：里面的链接、表单跳转、附件下载地址往往还是原始的 `sdust.edu.cn` 域名，点下去就掉出门户；想在新标签页打开、想把网址发给同学，也都用不了。换个设备或者登录态过期，又得从头登一遍，手机上尤其难受。
 
-[SDUST WebVPN 本地透明代理](/projects/sdust-webvpn)就是为解决这个而写的。这篇文章讲怎么用。
+[SDUST WebVPN 本地透明代理](/projects/sdust-webvpn)就是为解决这个而写的：它在你本机跑一个代理，浏览器里直接敲校内的原始地址就能用，页面里的链接、跳转、下载都跟坐在校内一样。顺带，`git clone`、`pip install` 这类命令行访问也一起吃这套代理。
 
 ## 它做了什么
 
@@ -209,11 +208,11 @@ WebVPN 是 clientless 反向代理，所有东西都封装在 443 的 HTTP 里�
 
 ## 几个补充
 
-**Node.js 的 `fetch` 默认不读代理环境变量**，要设 `NODE_USE_ENV_PROXY=1`（Node 24+），
-或改用 `undici` 的 `ProxyAgent`。老的 `node-fetch`、`axios` 一般会读。
+**Node.js 的 `fetch` 默认不读代理环境变量**，要设 [`NODE_USE_ENV_PROXY=1`](https://nodejs.org/api/cli.html#node_use_env_proxy1)（Node 24+），
+或改用 `undici` 的 [`ProxyAgent`](https://undici.nodejs.org/api/ProxyAgent)。老的 `node-fetch`、`axios` 一般会读。
 
 **全局模式下命令行访问站外地址也会绕一圈**（能用但慢）。如果介意，用 PAC 模式让浏览器走，
-命令行单独用 `git config http.proxy` 按需指定。
+命令行单独用 [`git config http.proxy`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-httpproxy) 按需指定。
 
 **接系统代理前会先备份，退出或「关闭系统代理」时原样还原**。原设置存在
 `state\sysproxy-backup.json`，不会把你原来的代理配置弄丢。
@@ -224,7 +223,7 @@ WebVPN 是 clientless 反向代理，所有东西都封装在 443 的 HTTP 里�
 
 ## 和翻墙软件冲突
 
-本程序和 Clash、v2rayN 这类同样依赖系统代理的软件**互斥**——它们抢的是同一个开关。
+本程序和 Clash、[v2rayN](https://github.com/2dust/v2rayN) 这类同样依赖系统代理的软件**互斥**——它们抢的是同一个开关。
 
 解决办法：把翻墙软件切到 **TUN / 虚拟网卡模式**，然后把 `*.sdust.edu.cn` 和学校地址段
 设为直连。这样两套机制不打架。
