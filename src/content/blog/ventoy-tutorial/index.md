@@ -1,7 +1,7 @@
 ---
 title: "Ventoy 使用教程：一个 U 盘装下所有系统镜像"
 description: "U 盘只装一次，之后把 ISO 拖进去就能启动。要点、Secure Boot 的坑、以及它为什么不能替代 PE。"
-pubDate: 2026-11-10
+pubDate: 2026-11-10T18:49:29+08:00
 tags: ["电脑", "搞机"]
 ---
 
