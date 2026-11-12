@@ -12,7 +12,32 @@ tags: ["安卓", "搞机"]
 
 答案在层级上：LSPosed 不是一个独立的东西，它是一层挂在 Zygisk 之上的框架。而 KernelSU 默认不提供 Zygisk。中间这一环没补上，后面装什么都白搭。
 
-## 三层的依赖关系
+> [!核心] 主线三步
+>
+> 1. 装 Zygisk Next，重启后确认三项 zygote 都是绿勾（第 3 节）
+> 2. 装 Vector 框架（第 4 节）
+> 3. 装模块并勾对作用域（第 5 节）
+>
+> 第 2 节是选路：开源的 Vector 还是官方闭源版，选好之后步骤一样。
+> 第 6 节反检测、第 7 节救砖都是出问题才需要看的补充。
+
+## 开始之前，先确认你已经走到这儿
+
+这一篇不是独立的教程，是[安卓解锁 BL 与 KernelSU root](/blog/android-unlock-bl-kernelsu)的续篇。
+下面这几条只要缺一条，建议先回去把那篇走完，否则会在中间某一步莫名其妙地失败。
+
+| 条件 | 怎么确认 | 不满足会怎样 |
+|---|---|---|
+| 已解锁 Bootloader | 开机有黄字警告，或开发者选项里显示「引导加载程序已解锁」 | 什么都装不了 |
+| 已装 KernelSU 且能拿到 root | 随便一个终端里 `su` 能进 root shell | 模块页根本打不开 |
+| KernelSU 版本 ≥ 10940，ksud ≥ 11424 | KernelSU 管理器首页能看到版本号 | Zygisk Next 装上了也不工作 |
+| 内核带 SELinux 补丁 | 官方 KernelSU 的内核都带，自编译内核要自己确认 | Zygisk 注入失败 |
+| 没有别的 Zygisk 实现 | 模块页里没有 NeoZygisk 之类 | 两个共存会导致 zygote 起不来，开不了机 |
+
+功能效果跟机型无关，本文以**一加 13** 举例只是为了截图方便。换成任何一台已经 root 的
+安卓机，步骤都一样。
+
+## 1. 三层的依赖关系
 
 ```
 LSPosed / Vector  ← 框架层，靠 Zygisk 注入 zygote
@@ -26,7 +51,7 @@ Magisk 自带 Zygisk，在设置里勾一下就有。KernelSU 走的完全是另
 
 这就是为什么「照着 Magisk 教程装 LSPosed」在 KernelSU 上一定失败：教程里的那一步「打开 Zygisk 开关」，在 KernelSU 的管理器里根本不存在。
 
-## 现在的 LSPosed 有两条路
+## 2. 现在的 LSPosed 有两条路
 
 这是必须先讲清楚的一点，因为上游在 2024 年初发生了一次分叉，网上大量教程还停在分叉之前的状态。
 
@@ -49,7 +74,7 @@ GPLv3，闭源分发与许可证要求存在冲突。
 
 > 模块本身的仓库大多在 [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo) 下，想找模块可以去那里翻。新版模块开始走 [libxposed API](https://github.com/JingMatrix/libxposed-api)，老的走 [Xposed API](https://api.xposed.info/)，两者框架都兼容。
 
-## 第一步：装 Zygisk Next
+## 3. 装 Zygisk Next
 
 这一环的硬性要求跟机型无关，只有 KernelSU 的版本门槛：
 
@@ -70,7 +95,7 @@ GPLv3，闭源分发与许可证要求存在冲突。
 
 > 同一时间只能有一个 Zygisk 实现。之前装过别的（比如 [NeoZygisk](https://github.com/JingMatrix/NeoZygisk)），先卸掉再装这个，两个共存会直接导致 zygote 起不来。NeoZygisk 也是 JingMatrix 的作品，跟 Vector 同作者，两者搭配同样可行，选一个就行。
 
-## 第二步：装 Vector
+## 4. 装 Vector
 
 到 [Vector 的 Releases](https://github.com/JingMatrix/Vector/releases) 下载最新稳定版的 zip（不要拿 CI 构建，那是给调试用的），同样从模块页安装，重启。
 
@@ -89,7 +114,7 @@ GPLv3，闭源分发与许可证要求存在冲突。
 
 这一页还会写明当前实现支持的 API 版本（上图是 API 102）。装模块之前对一眼这个数字，模块要求的 API 比它高的话，装上去也不会工作。
 
-## 第三步：装第一个模块
+## 5. 装第一个模块
 
 先明确一件事：**LSPosed 模块是普通 APK**，不是 zip。zip 那个是框架自己，模块直接装 APK 就行，跟装普通应用一样。
 
@@ -122,7 +147,7 @@ GPLv3，闭源分发与许可证要求存在冲突。
 
 建议从第一类开始。界面类模块即使崩了，也只是桌面出问题，不至于开不了机。
 
-## 反检测：让 root 藏起来
+## 6. 反检测：让 root 藏起来
 
 解锁 BL 加 root 之后，银行、支付、部分游戏会检测到环境异常。LSPosed 本身管不了这件事，需要额外的隐藏模块。
 
@@ -137,7 +162,7 @@ GPLv3，闭源分发与许可证要求存在冲突。
 
 如果真的离不开某个金融 App，最稳妥的方案反而是别在这台机器上 root——这是取舍问题，不是技术问题。
 
-## 出问题了怎么救
+## 7. 出问题了怎么救
 
 ### 装完模块无限重启
 
@@ -180,7 +205,7 @@ reboot
 
 跟上一篇说的一样，OTA 会覆盖 `init_boot`，root 没了，上面这整套自然也就没了。按顺序重来：还原原厂镜像 → OTA → 重新提 `init_boot` → 重新 root → 重装 Zygisk Next 和 Vector。模块本身不用重装，它们的配置在 `/data` 里，会留着。
 
-## 卸载和回滚
+## 8. 卸载和回滚
 
 只想换个框架：管理器里卸掉 Vector，重启，装另一个，再重启。模块的配置会保留。
 
@@ -195,7 +220,7 @@ reboot
 
 想连 root 一起去掉，回上一篇的「回锁」一节——记得先刷回完整原厂固件。
 
-## 一句话总结
+## 小结
 
 KernelSU 到 LSPosed 之间差一个 Zygisk 实现，这是所有「装完不生效」的根源。框架选 Vector 还是闭源官方版，本质是「可审计」和「反检测强度」之间的取舍，没有标准答案。剩下的坑都在作用域上：勾得越少越安全，这是反直觉但正确的做法。
 

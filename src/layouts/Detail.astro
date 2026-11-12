@@ -56,7 +56,45 @@ function externalLinksBlank(html: string): string {
   });
 }
 
-const renderedBody = externalLinksBlank(bodyHtml);
+/**
+ * 提示块（callout）。
+ *
+ * Markdown 里写 `> [!核心] 标题` 这类引用，构建时转成带样式的 div，
+ * 用来标出「主线」与「可跳过」的部分——长文里读者需要一眼分辨哪些必须看。
+ * 保持零依赖：这里只做字符串替换，和上面的外链处理同一个位置。
+ */
+const CALLOUTS: Record<string, { label: string; tone: string }> = {
+  核心: { label: '核心', tone: 'core' },
+  可选: { label: '可跳过', tone: 'optional' },
+  注意: { label: '注意', tone: 'note' },
+};
+
+function renderCallouts(html: string): string {
+  return html.replace(
+    /<blockquote>([\s\S]*?)<\/blockquote>/g,
+    (whole, inner: string) => {
+      const match = inner.match(/^\s*<p>\s*\[!([^\]]+)\]\s*/);
+      if (!match) return whole;
+
+      const callout = CALLOUTS[match[1].trim()];
+      if (!callout) return whole;
+
+      // 摘掉开头的标记；紧随其后的第一段当作标题
+      const body = inner
+        .replace(/^\s*<p>\s*\[![^\]]+\]\s*/, '<p>')
+        .replace(/^(\s*)<p>([\s\S]*?)<\/p>/, '$1<p class="callout-title">$2</p>');
+
+      return [
+        `<div class="callout callout-${callout.tone}">`,
+        `<p class="callout-label">${callout.label}</p>`,
+        body,
+        '</div>',
+      ].join('');
+    }
+  );
+}
+
+const renderedBody = renderCallouts(externalLinksBlank(bodyHtml));
 ---
 
 <Base

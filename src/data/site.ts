@@ -16,7 +16,7 @@ export interface NavItem {
 
 export const site = {
   title: '慕',
-  description: '折腾电脑手机的流水账，装系统、刷机、翻墙，坏的都记在这儿。论文实验慢慢放。',
+  description: '记录折腾电脑和手机的过程，偶尔写点论文和实验。',
   author: '慕',
   /** 部署地址：这是站点根地址，决定 canonical / RSS / sitemap 的链接 */
   url: 'https://xaviermu.github.io',
@@ -27,7 +27,7 @@ export const site = {
     // 以下两项为可选：留空字符串即不渲染
     subtitle: '',
     focus: '',
-    intro: '装系统、刷机、root、翻墙都干过，也弄坏过几台，记在这儿。其实文章都是 AI 写的，包括这句。论文和实验慢慢放。',
+    intro: '哈基咪南北绿多，阿西噶阿西，阿西哈雅酷奶，哈基米哈基。哈基米曼波曼波，吗吉利哇呀曼波，阿西噶哈雅酷奶农，哦吗吉利曼波。',
   },
 
   social: [
@@ -69,16 +69,16 @@ export const copy = {
 
   blog: {
     title: '文章',
-    description: '装系统、刷机、翻墙、虚拟机这些动手活居多，偶尔掺点读论文和做实验的记录。',
+    description: '折腾电脑和手机的记录，偶尔也有论文和实验笔记。',
     count: (n: number) => `共 ${n} 篇`,
-    empty: '一篇都没有，作者还在摸鱼。',
+    empty: '还没有文章。',
   },
 
   archive: {
     title: '归档',
-    description: '按时间倒着排，越往下越老。',
+    description: '全部文章，按时间排列。',
     count: (n: number) => `共 ${n} 篇`,
-    empty: '空的，连灰都没有。',
+    empty: '还没有文章。',
     aside: { years: '每年', tags: '标签', stats: '统计' },
     statLabels: { posts: '文章', tags: '标签' },
     /** 一月 … 十二月，归档页按月分组用 */
@@ -90,18 +90,18 @@ export const copy = {
 
   tags: {
     title: '标签',
-    description: '文章不多，标签倒不少。',
+    description: '全部标签，按文章数量排序。',
     count: (n: number) => `共 ${n} 个`,
     empty: '还没有标签。',
     aside: { top: '最多使用', recent: '最近新增', note: '说明' },
-    note: '字越大代表那类文章越多，纯属视觉把戏。',
+    note: '标签字号随文章数量变化。',
   },
 
   projects: {
     title: '项目',
-    description: '自己写着用的两个小工具，能用，谈不上好用。',
+    description: '自己写的一些小工具。',
     count: (n: number) => `共 ${n} 个`,
-    empty: '还没动手做过什么。',
+    empty: '还没有项目。',
     aside: { stack: '技术栈', status: '状态', years: '年份' },
   },
 
@@ -113,22 +113,22 @@ export const copy = {
 
   search: {
     title: '搜索',
-    description: '站内搜一下，找不到也别怪我。',
-    hint: '直接敲关键词，中文也认。',
+    description: '站内搜索。',
+    hint: '输入关键词搜索，支持中文。',
   },
 
   about: {
     title: '关于',
-    fallbackDescription: (author: string) => `${author}：折腾电脑手机，也弄坏过几台机器。`,
+    fallbackDescription: (author: string) => `${author}：记录折腾电脑和手机的过程。`,
     aside: { contact: '联系', site: '本站' },
   },
 
   notFound: {
     title: '404 · 页面不存在',
-    description: '这页没了，可能是你自己敲错了。',
-    heading: '这页不存在',
-    body: '要么链接失效了，要么这页压根没写过。',
+    description: '页面不存在。',
+    heading: '页面不存在',
+    body: '链接可能已失效，或者这个页面还没写。',
     links: { home: '首页', posts: '全部文章', archive: '归档', tags: '标签', latest: '最近一篇' },
-    recentTitle: '要不看看这些',
+    recentTitle: '最近的文章',
   },
 };

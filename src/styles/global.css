@@ -253,6 +253,57 @@ h4 {
   margin-top: 1em;
 }
 
+/*
+ * 提示块：> [!核心] / > [!可选] / > [!注意]
+ * 长文里标出主线与可跳过的内容，样式上要能和普通引用一眼分开。
+ */
+.prose .callout {
+  border-left: 3px solid var(--line-strong);
+  background: var(--bg-subtle);
+  padding: 0.9em 1.1em;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.prose .callout > * + * {
+  margin-top: 0.8em;
+}
+
+.prose .callout-label {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+.prose .callout-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.prose .callout-core {
+  border-left-color: var(--fg);
+}
+
+.prose .callout-core .callout-label {
+  color: var(--fg);
+}
+
+.prose .callout-optional {
+  border-left-style: dashed;
+}
+
+.prose .callout-optional .callout-label {
+  color: var(--fg-faint);
+}
+
+.prose .callout-note {
+  border-left-color: var(--line-strong);
+}
+
 .prose hr {
   border: 0;
   border-top: 1px solid var(--line);
