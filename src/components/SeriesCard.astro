@@ -1,0 +1,209 @@
+---
+/**
+ * 系列卡片。用于 /series 列表页与首页。
+ * 结构：顶边一条系列色 + 代码 + 标题 + 简介 + 章节数与时长。
+ */
+import Icon from './Icon.astro';
+import type { SeriesGroup } from '../utils/posts';
+import { slugOf } from '../utils/posts';
+
+interface Props {
+  group: SeriesGroup;
+  /** 首页用 compact：只显示封面 + 标题 + 章节数 */
+  variant?: 'full' | 'compact';
+  headingLevel?: 2 | 3;
+}
+
+const { group, variant = 'full', headingLevel = 3 } = Astro.props;
+const { def, posts, minutes } = group;
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
+---
+
+<article class:list={['series-card', `tone-${def.tone}`, variant]}>
+  <a href={`/series/${def.id}`} class="series-card__link plain">
+    <div class="series-card__body">
+      <span class="series-card__code mono">{def.code}</span>
+      <Heading class="series-card__title">{def.title}</Heading>
+      {variant === 'full' && <p class="series-card__desc">{def.description}</p>}
+
+      <div class="series-card__meta">
+        <span class="series-card__count">
+          <strong class="mono">{posts.length}</strong> 篇
+        </span>
+        <span class="series-card__dot" aria-hidden="true">·</span>
+        <span class="mono">{minutes} 分钟</span>
+      </div>
+
+      <ol class="series-card__list">
+        {
+          posts.slice(0, variant === 'compact' ? 2 : 3).map((post) => (
+            <li>
+              <span class="series-card__num mono">
+                {String(post.data.seriesOrder ?? 0).padStart(2, '0')}
+              </span>
+              <span class="series-card__item-title">{post.data.title}</span>
+            </li>
+          ))
+        }
+        {
+          posts.length > (variant === 'compact' ? 2 : 3) && (
+            <li class="series-card__more">
+              …还有 {posts.length - (variant === 'compact' ? 2 : 3)} 篇
+            </li>
+          )
+        }
+      </ol>
+
+      <span class="series-card__go">
+        查看系列 <Icon name="arrow" size={13} />
+      </span>
+    </div>
+  </a>
+</article>
+
+<style>
+  .series-card {
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--tone);
+    border-radius: var(--radius-card);
+    background: var(--bg-elevated);
+    overflow: hidden;
+    transition: border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease), transform var(--duration) var(--ease);
+  }
+
+  .series-card:hover {
+    border-color: var(--line-strong);
+    border-top-color: var(--tone);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+  }
+
+  .series-card__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .series-card__code {
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semi);
+    letter-spacing: var(--tracking-kicker);
+    color: var(--tone);
+  }
+
+  .series-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    flex: 1;
+  }
+
+  .series-card__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semi);
+    letter-spacing: var(--tracking-cjk);
+  }
+
+  .series-card__desc {
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--fg-muted);
+    text-wrap: pretty;
+  }
+
+  .series-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+  }
+
+  .series-card__meta strong {
+    color: var(--tone);
+    font-weight: var(--weight-semi);
+  }
+
+  .series-card__dot {
+    color: var(--line-strong);
+  }
+
+  /* 章节目录：用序号 + 标题，暗示「这是有顺序的」 */
+  .series-card__list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-1) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+  }
+
+  .series-card__list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    min-width: 0;
+  }
+
+  .series-card__num {
+    flex-shrink: 0;
+    color: var(--tone);
+    opacity: 0.75;
+    font-size: var(--text-2xs);
+  }
+
+  .series-card__item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fg-muted);
+  }
+
+  .series-card__more {
+    color: var(--fg-faint);
+    padding-left: calc(1.1em + 0.5em);
+  }
+
+  .series-card__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-top: auto;
+    padding-top: var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--tone);
+  }
+
+  .series-card__go svg {
+    transition: transform var(--duration) var(--ease);
+  }
+
+  .series-card:hover .series-card__go svg {
+    transform: translateX(3px);
+  }
+
+  /* 紧凑版：首页用，去掉简介，底部不留大片空白 */
+  .compact .series-card__body {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
+  .compact .series-card__title {
+    font-size: var(--text-base);
+  }
+
+  .compact .series-card__go {
+    display: none;
+  }
+
+  /* 章节列表在紧凑版里贴底，卡片高度由内容决定而不是被拉伸出的空白撑开 */
+  .compact .series-card__list {
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--line-faint);
+  }
+</style>

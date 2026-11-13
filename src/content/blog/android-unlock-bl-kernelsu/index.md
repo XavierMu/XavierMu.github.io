@@ -4,6 +4,8 @@ description: "解锁的坎在资格而不在命令，刷机的坎在选错分区
 pubDate: 2022-09-26
 updatedDate: 2026-11-11
 tags: ["安卓", "搞机"]
+series: android-root
+seriesOrder: 1
 ---
 
 解 BL、root、装 LSPosed，经常被打包成「玩机三步走」来卖。实际上这是三个不同层级的权限，前提、失败方式、出事之后的后果都不一样，混在一起讲就必然会漏掉「哪一步做错了会变砖」这种关键信息。

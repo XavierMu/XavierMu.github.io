@@ -1,13 +1,32 @@
 ---
 /**
  * 图标。保持内联 SVG，零请求、可继承 currentColor。
+ * 线性图标统一 1.75 描边，与参考站（Lucide）的视觉重量一致。
  */
 interface Props {
-  name: 'github' | 'email' | 'rss' | 'scholar' | 'link' | 'book' | 'arrow' | 'sun' | 'moon' | 'menu' | 'close';
+  name:
+    | 'github'
+    | 'email'
+    | 'rss'
+    | 'scholar'
+    | 'link'
+    | 'book'
+    | 'arrow'
+    | 'arrow-up-right'
+    | 'chevron-right'
+    | 'sun'
+    | 'moon'
+    | 'menu'
+    | 'close'
+    | 'search'
+    | 'calendar'
+    | 'clock'
+    | 'hash';
   size?: number;
+  strokeWidth?: number;
 }
 
-const { name, size = 16 } = Astro.props;
+const { name, size = 16, strokeWidth = 1.75 } = Astro.props;
 
 const paths: Record<string, string> = {
   github:
@@ -19,15 +38,35 @@ const paths: Record<string, string> = {
     'M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z',
   link: 'M10.59 13.41a1.98 1.98 0 000 2.83l3.54 3.54a1.98 1.98 0 002.83 0l2.12-2.12a1.98 1.98 0 000-2.83l-1.42-1.42M13.41 10.59a1.98 1.98 0 000-2.83L9.87 4.22a1.98 1.98 0 00-2.83 0L4.92 6.34a1.98 1.98 0 000 2.83l1.42 1.42',
   arrow: 'M5 12h14M13 6l6 6-6 6',
+  'arrow-up-right': 'M7 17L17 7M8 7h9v9',
+  'chevron-right': 'M9 5l7 7-7 7',
   book: 'M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z',
   sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
   moon: 'M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z',
   menu: 'M3 6h18M3 12h18M3 18h18',
   close: 'M18 6L6 18M6 6l12 12',
+  search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35',
+  calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z',
+  clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
+  hash: 'M4 9h16M4 15h16M10 3L8 21M16 3l-2 18',
 };
 
 // 需要 stroke 而非 fill 的图标
-const stroked = new Set(['arrow', 'sun', 'moon', 'menu', 'close', 'link', 'book']);
+const stroked = new Set([
+  'arrow',
+  'arrow-up-right',
+  'chevron-right',
+  'sun',
+  'moon',
+  'menu',
+  'close',
+  'link',
+  'book',
+  'search',
+  'calendar',
+  'clock',
+  'hash',
+]);
 const isStroke = stroked.has(name);
 ---
 
@@ -38,7 +77,7 @@ const isStroke = stroked.has(name);
   viewBox="0 0 24 24"
   fill={isStroke ? 'none' : 'currentColor'}
   stroke={isStroke ? 'currentColor' : 'none'}
-  stroke-width={isStroke ? 1.8 : undefined}
+  stroke-width={isStroke ? strokeWidth : undefined}
   stroke-linecap={isStroke ? 'round' : undefined}
   stroke-linejoin={isStroke ? 'round' : undefined}
   aria-hidden="true"

@@ -38,9 +38,16 @@ for (const mode of ['修复前(无 gutter)', '修复后(有 gutter)']) {
 
     const d = await p.evaluate(() => {
       const doc = document.documentElement;
+      // 详情页的第一列是左栏（本篇文章 / 项目信息 / 系列目录），
+      // 索引页的第一列就是 H1 自己。两者都要和 logo 左边缘对齐。
+      const rail = document.querySelector('.detail-rail');
+      const railVisible = rail && getComputedStyle(rail).display !== 'none';
       return {
         logo: Math.round(document.querySelector('.brand').getBoundingClientRect().left),
         h1: Math.round(document.querySelector('.site-main h1').getBoundingClientRect().left),
+        col1: Math.round(
+          (railVisible ? rail : document.querySelector('.site-main h1')).getBoundingClientRect().left
+        ),
         clientW: doc.clientWidth,
         gutter: window.innerWidth - doc.clientWidth,
         hasScroll: doc.scrollHeight > doc.clientHeight,
@@ -49,14 +56,23 @@ for (const mode of ['修复前(无 gutter)', '修复后(有 gutter)']) {
 
     positions.push({ label, ...d });
     console.log(
-      `  ${label.padEnd(14)} logo左=${String(d.logo).padStart(4)}  H1左=${String(d.h1).padStart(4)}  滚动条=${d.gutter}px  可用宽=${d.clientW}`
+      `  ${label.padEnd(14)} logo左=${String(d.logo).padStart(4)}  首列左=${String(d.col1).padStart(4)}  H1左=${String(d.h1).padStart(4)}  滚动条=${d.gutter}px  可用宽=${d.clientW}`
     );
     await c.close();
   }
 
   const logos = positions.map((x) => x.logo);
   const spread = Math.max(...logos) - Math.min(...logos);
-  console.log(`  → 偏移范围: ${spread}px ${spread === 0 ? '✓ 完全对齐' : '✗ 存在错位'}`);
+  console.log(`  → logo 偏移范围: ${spread}px ${spread === 0 ? '✓ 完全对齐' : '✗ 存在错位'}`);
+
+  const mismatched = positions.filter((x) => x.col1 !== x.logo);
+  if (mismatched.length) {
+    console.log(
+      `  ✗ 首列与 logo 未对齐: ${mismatched.map((x) => `${x.label}(${x.col1} vs ${x.logo})`).join(', ')}`
+    );
+  } else {
+    console.log('  ✓ 首列与 logo 左边缘一致');
+  }
 }
 
 await b.close();

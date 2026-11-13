@@ -104,7 +104,7 @@ function wrapTitle(title, maxPerLine = 16) {
 const esc = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** 文章图模板 */
+/** 文章图模板：与站点同一套视觉语言（网格底、紧排无衬线大标题、等宽 kicker） */
 function articleHtml({ title, description }) {
   const { lines, size } = layoutTitle(title);
   const titleHtml = lines.map((l) => esc(l)).join('<br />');
@@ -113,25 +113,38 @@ function articleHtml({ title, description }) {
 <html lang="zh-CN"><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:1200px;height:630px}
-body{background:#fdfdfc;color:#1a1a1a;font-family:"Noto Serif SC","Songti SC","SimSun",Georgia,serif;
-  display:flex;flex-direction:column;justify-content:space-between;padding:76px 88px;position:relative}
-.rule{position:absolute;top:0;left:88px;right:88px;height:1px;background:#e5e4e2}
-.brand{font-size:28px;font-weight:600;letter-spacing:.02em}
-.main{flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px}
-.title{font-size:${size}px;font-weight:600;line-height:1.28;letter-spacing:.01em}
-.desc{font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:24px;color:#6b6b6b;line-height:1.5;max-width:960px}
+body{background:#fff;color:#0a0a0a;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif}
+.grid{position:absolute;inset:0;
+  background-image:linear-gradient(to right,rgba(10,10,10,.06) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(10,10,10,.06) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(115% 85% at 30% 0%,#000 15%,transparent 74%);
+  mask-image:radial-gradient(115% 85% at 30% 0%,#000 15%,transparent 74%)}
+.inner{position:relative;display:flex;flex-direction:column;justify-content:space-between;
+  height:100%;padding:72px 80px}
+.top{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:660;letter-spacing:-.01em}
+.mark{width:14px;height:14px;border-radius:3px;background:#0a0a0a}
+.main{display:flex;flex-direction:column;gap:22px}
+.kicker{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:16px;
+  font-weight:600;letter-spacing:.08em;color:#737373}
+.title{font-size:${size}px;font-weight:660;line-height:1.16;letter-spacing:-.022em;max-width:960px}
+.desc{font-size:25px;color:#525252;line-height:1.5;max-width:900px}
 .footer{display:flex;justify-content:space-between;align-items:baseline;
-  font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:20px;color:#9e9e9e}
-.url{font-family:"Cascadia Code",Consolas,monospace;font-size:19px}
+  font-size:20px;color:#737373;padding-top:26px;border-top:1px solid #e5e5e5}
+.url{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:18px}
 </style></head>
 <body>
-  <div class="rule"></div>
-  <div class="brand">慕</div>
-  <div class="main">
-    <div class="title">${titleHtml}</div>
-    <div class="desc">${esc(description)}</div>
+  <div class="grid"></div>
+  <div class="inner">
+    <div class="top"><span class="mark"></span><span>慕</span></div>
+    <div class="main">
+      <div class="kicker">ARTICLE</div>
+      <div class="title">${titleHtml}</div>
+      <div class="desc">${esc(description)}</div>
+    </div>
+    <div class="footer"><span class="url">xaviermu.github.io</span><span>记录折腾电脑和手机的过程</span></div>
   </div>
-  <div class="footer"><span class="url">xaviermu.github.io</span><span>${lines.length > 1 ? '' : '文章'}</span></div>
 </body></html>`;
 }
 
@@ -148,8 +161,11 @@ async function shoot(html, outPath) {
   await page.screenshot({ path: outPath, type: 'png' });
 }
 
-// 1. 默认图
-const defaultTpl = readFileSync(join(ROOT, 'scripts', 'og-template.html'), 'utf8');
+// 1. 默认图：一张没有具体文章的站点名片
+const defaultTpl = readFileSync(join(ROOT, 'scripts', 'og-template.html'), 'utf8')
+  .replace('{{KICKER}}', 'SITE')
+  .replace('{{TITLE}}', esc('记录折腾电脑和手机的过程'))
+  .replace('{{DESC}}', esc('教程、实验与踩坑记录。'));
 await shoot(defaultTpl, join(OUT, 'default.png'));
 console.log('OK  default.png');
 

@@ -1,0 +1,586 @@
+---
+/**
+ * 搜索模态框。
+ *
+ * 取代原来独立的 /search 页：按 `/` 或 ⌘K / Ctrl+K 从任何页面唤起，
+ * 读完即关闭，不打断当前的阅读位置。
+ *
+ * 实现要点：
+ *   - <dialog> 原生提供 Esc 关闭、焦点困在层内、惰性背景，不需要手写这些；
+ *   - Pagefind 的 JS 与索引都比较大，第一次打开时才拉，不拖慢首屏；
+ *   - 键盘上下键在结果间移动，Enter 打开，是搜索框该有的行为。
+ */
+import Icon from './Icon.astro';
+
+// 搜索页保留为可直达的降级入口（无 JS 时仍可用），这里只渲染模态框
+---
+
+<dialog class="search-modal" id="search-modal" aria-label="站内搜索">
+  <div class="search-modal__panel">
+    <form class="search-modal__form" role="search" method="dialog">
+      <span class="search-modal__icon"><Icon name="search" size={17} /></span>
+      <input
+        type="search"
+        class="search-modal__input"
+        id="search-modal-input"
+        placeholder="搜索文章…"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="搜索关键词"
+        aria-controls="search-modal-results"
+      />
+      <button type="button" class="search-modal__close" id="search-modal-close" aria-label="关闭搜索">
+        <kbd class="search-modal__kbd">Esc</kbd>
+      </button>
+    </form>
+
+    <div class="search-modal__body" id="search-modal-body">
+      <!-- 打开前：快捷键提示 + 热门标签 -->
+      <div class="search-modal__hint" id="search-modal-hint">
+        <p class="search-modal__hint-title">输入关键词开始搜索</p>
+        <ul class="search-modal__keys">
+          <li><kbd>↑</kbd><kbd>↓</kbd> 选择</li>
+          <li><kbd>Enter</kbd> 打开</li>
+          <li><kbd>Esc</kbd> 关闭</li>
+        </ul>
+      </div>
+
+      <!-- 结果列表，由脚本填充 -->
+      <ul class="search-modal__results" id="search-modal-results" role="listbox" aria-label="搜索结果"></ul>
+
+      <p class="search-modal__empty" id="search-modal-empty" hidden></p>
+    </div>
+
+    <footer class="search-modal__footer">
+      <span id="search-modal-count">站内搜索</span>
+      <a href="/search" class="search-modal__all plain">打开完整搜索页</a>
+    </footer>
+  </div>
+</dialog>
+
+<script>
+  /**
+   * 搜索结果的最小形状。
+   * Pagefind 返回的是它自己的结构，这里只取标题、摘要、地址三样，
+   * 自己渲染成和站内列表一致的样式，而不是套 Pagefind 的默认皮肤。
+   */
+  interface Hit {
+    title: string;
+    excerpt: string;
+    url: string;
+    meta?: Record<string, string>;
+  }
+
+  let pagefind: any = null;
+  let loading: Promise<void> | null = null;
+  let activeIndex = -1;
+  let hits: Hit[] = [];
+  let debounce = 0;
+  let searchToken = 0;
+
+  const modal = document.getElementById('search-modal') as HTMLDialogElement | null;
+  const input = document.getElementById('search-modal-input') as HTMLInputElement | null;
+  const resultsEl = document.getElementById('search-modal-results');
+  const emptyEl = document.getElementById('search-modal-empty');
+  const hintEl = document.getElementById('search-modal-hint');
+  const countEl = document.getElementById('search-modal-count');
+  const closeBtn = document.getElementById('search-modal-close');
+
+  if (modal && input && resultsEl) {
+    /** 懒加载 Pagefind 的运行时 */
+    function loadPagefind(): Promise<void> {
+      if (pagefind) return Promise.resolve();
+      if (loading) return loading;
+
+      loading = new Promise<void>((resolve, reject) => {
+        // 按 Astro 的 base 拼路径，兼容子目录部署
+        const base = document.documentElement.dataset.base ?? '/';
+        const url = `${base.replace(/\/$/, '')}/pagefind/pagefind.js`;
+
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.textContent = `import * as pf from ${JSON.stringify(url)}; window.__pagefind = pf;`;
+        s.onerror = () => reject(new Error('pagefind not found'));
+        document.head.appendChild(s);
+
+        // module 脚本没有可靠 onload，用轮询等它挂到 window 上
+        const started = Date.now();
+        const timer = window.setInterval(() => {
+          if ((window as any).__pagefind) {
+            window.clearInterval(timer);
+            pagefind = (window as any).__pagefind;
+            resolve();
+          } else if (Date.now() - started > 8000) {
+            window.clearInterval(timer);
+            reject(new Error('pagefind timeout'));
+          }
+        }, 50);
+      });
+
+      return loading;
+    }
+
+    /** 把 Pagefind 的 data 转成我们的 Hit */
+    async function search(term: string): Promise<Hit[]> {
+      if (!pagefind) return [];
+      const found = await pagefind.search(term);
+      const out: Hit[] = [];
+      for (const item of found.results.slice(0, 8)) {
+        const data = await item.data();
+        out.push({
+          title: data.meta?.title ?? '未命名',
+          excerpt: data.excerpt ?? '',
+          url: data.url,
+          meta: data.meta,
+        });
+      }
+      return out;
+    }
+
+    function escapeHtml(s: string): string {
+      return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    }
+
+    /**
+     * 高亮命中词。
+     * Pagefind 的 excerpt 已经用 <mark> 包好了命中位置，但那是它自己的 HTML；
+     * 我们只信任其中的 <mark> 标签，其余一律转义，避免把索引内容当 HTML 执行。
+     */
+    function renderExcerpt(raw: string): string {
+      const withMarks = raw.replace(/<mark>/g, '\u0000M\u0000').replace(/<\/mark>/g, '\u0000E\u0000');
+      const safe = escapeHtml(withMarks);
+      return safe.replace(/\u0000M\u0000/g, '<mark>').replace(/\u0000E\u0000/g, '</mark>');
+    }
+
+    function renderResults(): void {
+      resultsEl.innerHTML = hits
+        .map(
+          (h, i) => `
+          <li class="search-modal__result" role="option" aria-selected="false" data-index="${i}">
+            <a href="${escapeHtml(h.url)}" class="search-modal__result-link">
+              <span class="search-modal__result-title">${escapeHtml(h.title)}</span>
+              <span class="search-modal__result-excerpt">${renderExcerpt(h.excerpt)}</span>
+            </a>
+          </li>`
+        )
+        .join('');
+
+      resultsEl.hidden = hits.length === 0;
+      activeIndex = hits.length > 0 ? 0 : -1;
+      setActive(activeIndex);
+    }
+
+    function setActive(index: number): void {
+      const items = resultsEl.querySelectorAll<HTMLElement>('.search-modal__result');
+      items.forEach((el, i) => {
+        const on = i === index;
+        el.classList.toggle('is-active', on);
+        el.setAttribute('aria-selected', String(on));
+      });
+      if (index >= 0) {
+        items[index]?.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function setMessage(text: string): void {
+      if (emptyEl) {
+        emptyEl.textContent = text;
+        emptyEl.hidden = !text;
+      }
+    }
+
+    async function runSearch(term: string): Promise<void> {
+      const token = ++searchToken;
+      const q = term.trim();
+
+      if (!q) {
+        hits = [];
+        resultsEl.innerHTML = '';
+        resultsEl.hidden = true;
+        if (hintEl) hintEl.hidden = false;
+        setMessage('');
+        if (countEl) countEl.textContent = '站内搜索';
+        return;
+      }
+
+      if (hintEl) hintEl.hidden = true;
+
+      try {
+        await loadPagefind();
+      } catch {
+        setMessage('搜索索引尚未生成，请先运行 pnpm build。');
+        return;
+      }
+
+      if (countEl) countEl.textContent = '搜索中…';
+      const found = await search(q);
+
+      // 竞态保护：慢的旧请求不许覆盖新结果
+      if (token !== searchToken) return;
+
+      hits = found;
+      renderResults();
+
+      if (countEl) {
+        countEl.textContent = found.length > 0 ? `找到 ${found.length} 条结果` : '';
+      }
+      setMessage(found.length === 0 ? `没有找到「${q}」` : '');
+    }
+
+    function openModal(): void {
+      if (modal.open) return;
+      modal.showModal();
+      // 打开即聚焦，用户可以立刻打字
+      requestAnimationFrame(() => input.focus());
+      // 预热索引：用户打完第一个字之前就把它拉下来
+      loadPagefind().catch(() => {});
+    }
+
+    function closeModal(): void {
+      if (!modal.open) return;
+      modal.close();
+    }
+
+    // ---------- 事件 ----------
+
+    // 顶栏的搜索按钮 / 任意 [data-search-open] 都打开模态框
+    document.addEventListener('click', (event) => {
+      const trigger = (event.target as HTMLElement)?.closest('[data-search-open]');
+      if (!trigger) return;
+      event.preventDefault();
+      openModal();
+    });
+
+    // `/` 与 ⌘K / Ctrl+K 唤起；在输入框里打字时不拦截
+    document.addEventListener('keydown', (event) => {
+      const el = event.target as HTMLElement | null;
+      const tag = el?.tagName.toLowerCase();
+      const typing =
+        tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable;
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        modal.open ? closeModal() : openModal();
+        return;
+      }
+
+      if (event.key === '/' && !typing && !modal.open) {
+        event.preventDefault();
+        openModal();
+      }
+    });
+
+    input.addEventListener('input', () => {
+      window.clearTimeout(debounce);
+      // 150ms 足够合并连打，又不会让结果显得迟钝
+      debounce = window.setTimeout(() => runSearch(input.value), 150);
+    });
+
+    // 上下键移动、Enter 打开、Esc 关闭
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (hits.length === 0) return;
+        activeIndex = (activeIndex + 1) % hits.length;
+        setActive(activeIndex);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (hits.length === 0) return;
+        activeIndex = (activeIndex - 1 + hits.length) % hits.length;
+        setActive(activeIndex);
+      } else if (event.key === 'Enter') {
+        if (activeIndex >= 0 && hits[activeIndex]) {
+          event.preventDefault();
+          window.location.href = hits[activeIndex].url;
+        }
+      }
+    });
+
+    // 鼠标悬停也更新选中项，键盘与鼠标不打架
+    resultsEl.addEventListener('mousemove', (event) => {
+      const item = (event.target as HTMLElement).closest<HTMLElement>('.search-modal__result');
+      if (!item) return;
+      const index = Number(item.dataset.index);
+      if (!Number.isNaN(index) && index !== activeIndex) {
+        activeIndex = index;
+        setActive(index);
+      }
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+
+    // 点面板外部（backdrop）关闭
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+
+    // 关闭后清空，下次打开是干净的
+    modal.addEventListener('close', () => {
+      input.value = '';
+      hits = [];
+      activeIndex = -1;
+      resultsEl.innerHTML = '';
+      resultsEl.hidden = true;
+      if (hintEl) hintEl.hidden = false;
+      setMessage('');
+      if (countEl) countEl.textContent = '站内搜索';
+    });
+  }
+</script>
+
+<style>
+  .search-modal {
+    /* 顶部对齐而非居中：结果变长时输入框不该跟着上下跳 */
+    margin: 0 auto;
+    margin-top: max(12vh, 4rem);
+    padding: 0;
+    width: min(40rem, calc(100vw - 2rem));
+    max-height: min(70vh, 36rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-surface);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-window);
+    color: var(--fg);
+    overflow: hidden;
+  }
+
+  .search-modal::backdrop {
+    background: rgb(0 0 0 / 0.42);
+    backdrop-filter: blur(2px);
+  }
+
+  /* 入场：轻微上浮，避免生硬弹出 */
+  .search-modal[open] {
+    animation: modal-in 160ms var(--ease);
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.99);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-modal[open] {
+      animation: none;
+    }
+  }
+
+  .search-modal__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+  }
+
+  /* ---------- 输入行 ---------- */
+  .search-modal__form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .search-modal__icon {
+    color: var(--fg-faint);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .search-modal__input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    color: var(--fg);
+    padding: 0;
+  }
+
+  .search-modal__input::placeholder {
+    color: var(--fg-faint);
+  }
+
+  /* 去掉 WebKit 给 type=search 加的原生清除按钮与装饰 */
+  .search-modal__input::-webkit-search-decoration,
+  .search-modal__input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .search-modal__close {
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .search-modal__kbd,
+  .search-modal__keys kbd {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: 1;
+    padding: 0.3em 0.4em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xs);
+    background: var(--bg-subtle);
+    color: var(--fg-faint);
+  }
+
+  .search-modal__close:hover .search-modal__kbd {
+    color: var(--fg);
+    border-color: var(--line-strong);
+  }
+
+  /* ---------- 结果区 ---------- */
+  .search-modal__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-2) 0;
+  }
+
+  .search-modal__hint {
+    padding: var(--space-5);
+  }
+
+  .search-modal__hint-title {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  .search-modal__keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    list-style: none;
+    padding: 0;
+    margin-top: var(--space-3);
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+  }
+
+  .search-modal__keys li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+
+  .search-modal__results {
+    list-style: none;
+    padding: var(--space-1) 0;
+    margin: 0;
+  }
+
+  /*
+   * 结果项是脚本用 innerHTML 注入的，不带 Astro 的 data-astro-cid 属性，
+   * scoped 选择器一律匹配不到——必须用 :global 才会生效。
+   * 踩过：不加 :global 时标题与摘要会挤在同一行，因为 display:block 根本没应用上。
+   */
+  .search-modal__result {
+    display: block;
+  }
+
+  .search-modal__results :global(.search-modal__result-link) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    padding: var(--space-3) var(--space-5);
+    text-decoration: none;
+    color: var(--fg);
+    border-left: 2px solid transparent;
+  }
+
+  .search-modal__results :global(.search-modal__result.is-active .search-modal__result-link) {
+    background: var(--bg-subtle);
+    border-left-color: var(--fg);
+  }
+
+  .search-modal__results :global(.search-modal__result-title) {
+    display: block;
+    font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    line-height: 1.45;
+    letter-spacing: var(--tracking-cjk);
+  }
+
+  .search-modal__results :global(.search-modal__result-excerpt) {
+    display: -webkit-box;
+    font-size: var(--text-sm);
+    line-height: 1.65;
+    color: var(--fg-muted);
+    /* 摘要最多两行，结果列表才扫得快 */
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .search-modal__results :global(mark) {
+    background: var(--accent-soft);
+    color: var(--fg);
+    padding: 0.05em 0.15em;
+    border-radius: 2px;
+  }
+
+  .search-modal__empty {
+    padding: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  /* ---------- 页脚 ---------- */
+  .search-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--line);
+    background: var(--bg-subtle);
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+    flex-shrink: 0;
+  }
+
+  .search-modal__all {
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .search-modal__all:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .search-modal {
+      width: calc(100vw - 1rem);
+      margin-top: 8vh;
+      max-height: 78vh;
+    }
+
+    .search-modal__form {
+      padding: var(--space-3) var(--space-4);
+    }
+
+    .search-modal__input {
+      font-size: var(--text-base);
+    }
+
+    .search-modal__result-link {
+      padding: var(--space-3) var(--space-4);
+    }
+  }
+</style>

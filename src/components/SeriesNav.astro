@@ -1,0 +1,256 @@
+---
+/**
+ * 文章页左栏的系列导航。
+ *
+ * 对应参考站文档页左侧的章节列表：读者任何时候都能看到
+ * 「这是系列里的第几章、还有哪些没读、上/下一篇是什么」。
+ *
+ * 只在文章属于某个系列时渲染；独立文章不显示。
+ */
+import Icon from './Icon.astro';
+import type { SeriesDef } from '../data/series';
+import type { Post } from '../utils/posts';
+import { slugOf } from '../utils/posts';
+import { copy } from '../data/site';
+
+interface Props {
+  def: SeriesDef;
+  posts: Post[];
+  /** 当前文章在 posts 中的下标（0 起） */
+  index: number;
+}
+
+const { def, posts, index } = Astro.props;
+const current = posts[index];
+const prev = index > 0 ? posts[index - 1] : null;
+const next = index < posts.length - 1 ? posts[index + 1] : null;
+const progress = ((index + 1) / posts.length) * 100;
+---
+
+<aside class:list={['series-side', `tone-${def.tone}`]} aria-label={copy.series.inSeries}>
+  <div class="series-side__head">
+    <p class="series-side__label kicker">{def.code}</p>
+    <a href={`/series/${def.id}`} class="series-side__title plain">{def.title}</a>
+
+    <!-- 进度条：读了几章一眼可见 -->
+    <div class="series-side__progress">
+      <div class="series-side__bar">
+        <span class="series-side__fill" style={`width:${progress}%`}></span>
+      </div>
+      <span class="series-side__count mono">
+        {copy.series.chapter(index + 1, posts.length)}
+      </span>
+    </div>
+  </div>
+
+  <ol class="series-side__list">
+    {
+      posts.map((post, i) => (
+        <li>
+          <a
+            href={`/blog/${slugOf(post.id)}`}
+            class:list={['series-side__item', 'plain', { 'is-current': post.id === current.id }]}
+            aria-current={post.id === current.id ? 'page' : undefined}
+          >
+            <span class="series-side__num mono">
+              {String(post.data.seriesOrder ?? i + 1).padStart(2, '0')}
+            </span>
+            <span class="series-side__item-title">{post.data.title}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+
+  <nav class="series-side__nav" aria-label="系列内导航">
+    {
+      prev ? (
+        <a href={`/blog/${slugOf(prev.id)}`} class="series-side__step plain">
+          <span class="series-side__step-dir mono">上一章</span>
+          <span class="series-side__step-title">{prev.data.title}</span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+    {
+      next ? (
+        <a href={`/blog/${slugOf(next.id)}`} class="series-side__step plain series-side__step--next">
+          <span class="series-side__step-dir mono">下一章</span>
+          <span class="series-side__step-title">{next.data.title}</span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+  </nav>
+
+  <a href="/series" class="series-side__all link-arrow plain">
+    <Icon name="arrow" size={12} /> 全部系列
+  </a>
+</aside>
+
+<style>
+  /* 显隐、sticky、滚动都由外层 .detail-rail 统一负责，这里只排内容 */
+  .series-side {
+    font-size: var(--text-sm);
+  }
+
+  .series-side__head {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: var(--space-3);
+  }
+
+  .series-side__label {
+    color: var(--tone);
+    margin-bottom: var(--space-2);
+  }
+
+  .series-side__title {
+    display: block;
+    font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    color: var(--fg);
+    letter-spacing: var(--tracking-cjk);
+    line-height: 1.45;
+    transition: color var(--duration) var(--ease);
+  }
+
+  .series-side__title:hover {
+    color: var(--tone);
+  }
+
+  .series-side__progress {
+    margin-top: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .series-side__bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .series-side__fill {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--tone);
+    transition: width var(--duration) var(--ease);
+  }
+
+  .series-side__count {
+    flex-shrink: 0;
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .series-side__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
+  }
+
+  .series-side__item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45em;
+    padding: 0.35em 0.4em 0.35em 0.35em;
+    margin-left: -0.35em;
+    border-radius: var(--radius-xs);
+    border-left: 2px solid transparent;
+    color: var(--fg-muted);
+    line-height: 1.5;
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease),
+      border-color var(--duration) var(--ease);
+  }
+
+  .series-side__item:hover {
+    color: var(--fg);
+    background: var(--bg-subtle);
+  }
+
+  /* 当前章：实心竖条 + 深色文字，位置感最强 */
+  .series-side__item.is-current {
+    color: var(--fg);
+    font-weight: var(--weight-medium);
+    border-left-color: var(--tone);
+    background: var(--tone-bg);
+  }
+
+  .series-side__num {
+    flex-shrink: 0;
+    font-size: var(--text-2xs);
+    color: var(--tone);
+    opacity: 0.7;
+  }
+
+  .series-side__item.is-current .series-side__num {
+    opacity: 1;
+  }
+
+  .series-side__item-title {
+    font-size: var(--text-xs);
+  }
+
+  /* ---------- 上一章 / 下一章 ---------- */
+  /*
+   * auto-fit 而不是固定两列：系列首章只有「下一章」、末章只有「上一章」时，
+   * 剩下的那个会自然铺满整行，不会留半格空白。
+   */
+  .series-side__nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .series-side__step {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    min-width: 0;
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .series-side__step--next {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .series-side__step:hover {
+    color: var(--fg);
+  }
+
+  .series-side__step-dir {
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+  }
+
+  .series-side__step-title {
+    font-size: var(--text-2xs);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .series-side__all {
+    margin-top: var(--space-4);
+    font-size: var(--text-2xs);
+  }
+</style>

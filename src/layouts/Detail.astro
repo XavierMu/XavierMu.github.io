@@ -1,9 +1,15 @@
 ---
 /**
- * 详情页共用骨架：正文居中 + 右侧目录。
+ * 详情页共用骨架：正文 + 两侧栏。
  *
- * 文章页与项目页共用，保证两种详情页的正文宽度、留白与目录行为完全一致。
- * 标题区由调用方通过 header slot 提供（文章有日期标签，项目有技术栈，结构不同）。
+ * 三栏布局（≥1280px）：
+ *   左栏  上下文：系列的章节导航，或「本篇文章」信息（发布 / 更新 / 阅读）
+ *   中栏  正文，宽度锁在 --width-prose，在剩余空间里居中
+ *   右栏  本页目录
+ *
+ * 三栏都固定宽度，左右留白由中栏居中自动均分——这是「分布均匀」的关键：
+ * 之前中栏是 1fr、正文左对齐，正文和目录之间会留出一整条空白，
+ * 而没有系列的文章只有两栏，正文挤在左边一条。
  */
 import Base from './Base.astro';
 import Toc from '../components/Toc.astro';
@@ -21,19 +27,16 @@ interface Props {
   tags?: string[];
 }
 
-const {
-  title,
-  description,
-  image,
-  type = 'article',
-  publishedAt,
-  updatedAt,
-  tags,
-} = Astro.props;
+const { title, description, image, type = 'article', publishedAt, updatedAt, tags } =
+  Astro.props;
 
 // 先把正文渲染成字符串，才能从中提取标题生成目录
 const bodyHtml = await Astro.slots.render('default');
 const headings = extractHeadings(bodyHtml, 2);
+
+/** 左栏内容由页面通过 rail 插槽提供，插槽为空时整栏不渲染 */
+const hasRail = Astro.slots.has('rail');
+const hasToc = headings.length >= 2;
 
 /**
  * 正文里的外部链接统一新窗口打开。
@@ -95,6 +98,8 @@ function renderCallouts(html: string): string {
 }
 
 const renderedBody = renderCallouts(externalLinksBlank(bodyHtml));
+
+const hasAside = hasToc || Astro.slots.has('aside');
 ---
 
 <Base
@@ -106,7 +111,17 @@ const renderedBody = renderCallouts(externalLinksBlank(bodyHtml));
   updatedAt={updatedAt}
   tags={tags}
 >
-  <article class="detail">
+  <article
+    class:list={['detail-grid', 'detail', { 'has-rail': hasRail, 'has-aside': hasAside }]}
+  >
+    {
+      hasRail && (
+        <div class="detail-rail">
+          <slot name="rail" />
+        </div>
+      )
+    }
+
     <div class="detail-main">
       <slot name="header" />
 
@@ -114,12 +129,14 @@ const renderedBody = renderCallouts(externalLinksBlank(bodyHtml));
 
       <footer class="detail-footer">
         <slot name="footer" />
-      </footer>    </div>
+      </footer>
+    </div>
 
     {
-      headings.length >= 2 && (
-        <aside class="detail-aside">
-          <Toc items={headings} />
+      hasAside && (
+        <aside class="detail-aside toc-aside">
+          {hasToc && <Toc items={headings} />}
+          <slot name="aside" />
         </aside>
       )
     }
@@ -127,70 +144,59 @@ const renderedBody = renderCallouts(externalLinksBlank(bodyHtml));
 </Base>
 
 <style>
-  .detail {
-    width: 100%;
-    /* 与顶栏共用同一个容器宽度与内边距，保证左右边缘对齐 */
-    max-width: var(--width-container);
-    margin-inline: auto;
-    padding-inline: var(--space-3);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-content: center;
-  }
-
-  /* 与 .container 的内边距保持一致 */
-  @media (min-width: 768px) {
-    .detail {
-      padding-inline: var(--space-4);
-    }
-  }
-
-  .detail-main {
-    width: 100%;
-    max-width: var(--width-prose);
-    margin-inline: auto;
-    min-width: 0;
-  }
-
-  .detail-aside {
+  /*
+   * 栅格随栏数变化：
+   *   默认    正文单栏（居中，控制行宽）
+   *   有左栏  左栏 + 正文
+   *   再加目录 左栏 + 正文 + 右栏
+   *
+   * 三条轨道全是固定宽度，剩余空间由中栏的 margin-inline:auto 均分到两侧，
+   * 所以正文和左右栏之间的间距永远相等。
+   */
+  .detail-rail {
     display: none;
   }
 
-  /* 大屏：正文填满剩余宽度 + 右侧目录，左右边缘对齐顶栏 */
   @media (min-width: 1280px) {
-    .detail {
-      grid-template-columns: minmax(0, 1fr) var(--width-aside);
-      column-gap: var(--gap-aside);
-      align-items: start;
+    :global(.detail.has-rail) {
+      grid-template-columns: var(--width-rail) minmax(0, 1fr);
     }
 
-    .detail-main {
-      /* 正文占满除右栏与间距之外的全部宽度 */
-      max-width: none;
-      margin-inline: 0;
+    :global(.detail.has-rail.has-aside) {
+      grid-template-columns: var(--width-rail) minmax(0, 1fr) var(--width-toc);
     }
 
-    .detail-aside {
+    /* 正文在剩余空间里居中：左右留白因此相等 */
+    .detail.has-rail .detail-main {
+      margin-inline: auto;
+    }
+
+    /*
+     * sticky 的 top 必须等于栏目的自然位置（顶栏高 + .site-main 的上内边距），
+     * 否则页面一滚动，栏目会先滑一小段再吸住——看起来像「跟着动了一下」。
+     */
+    .detail-rail {
       display: block;
+      align-self: start;
       position: sticky;
-      top: calc(64px + var(--space-4));
-      max-height: calc(100vh - 64px - var(--space-5));
+      top: calc(var(--nav-height) + var(--space-7));
+      max-height: calc(100vh - var(--nav-height) - var(--space-7) - var(--space-5));
       overflow-y: auto;
-      padding-top: 0.4em;
       scrollbar-width: thin;
+      /* 左栏与正文之间的分隔交给留白与网格底纹，不再画一条半截的竖线 */
+      padding-right: var(--space-4);
     }
   }
 
-  .detail-footer {
-    margin-top: var(--space-5);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--line);
+  /* 两栏都在时正文很窄，目录缩到 12rem 并允许折行 */
+  .detail-aside {
     font-size: var(--text-sm);
   }
 
-  @media (max-width: 640px) {
-    .detail {
-      padding-inline: var(--space-3);
-    }
+  .detail-footer {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+    font-size: var(--text-sm);
   }
 </style>

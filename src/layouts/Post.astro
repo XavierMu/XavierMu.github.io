@@ -3,6 +3,10 @@
  * 文章详情页。骨架由 Detail 提供，这里只负责标题区与页脚。
  */
 import Detail from './Detail.astro';
+import Icon from '../components/Icon.astro';
+import SeriesNav from '../components/SeriesNav.astro';
+import type { SeriesDef } from '../data/series';
+import type { Post as PostEntry } from '../utils/posts';
 
 interface Props {
   title: string;
@@ -15,6 +19,8 @@ interface Props {
   older?: { title: string; href: string } | null;
   /** 文章 slug，用于定位分享图 /og/<slug>.png */
   slug?: string;
+  /** 所属系列的上下文，用于渲染左栏章节导航 */
+  series?: { def: SeriesDef; posts: PostEntry[]; index: number } | null;
 }
 
 const {
@@ -26,6 +32,7 @@ const {
   readingTime,
   newer = null,
   older = null,
+  series = null,
 } = Astro.props;
 
 const fmt = (d: Date) =>
@@ -39,6 +46,7 @@ const fmt = (d: Date) =>
 // 文章分享图按 slug 命名，由 scripts/og.mjs 生成
 const slug = Astro.props.slug;
 const ogImage = slug ? `/og/${slug}.png` : undefined;
+const isUpdated = Boolean(updatedDate && updatedDate.valueOf() !== pubDate.valueOf());
 ---
 
 <Detail
@@ -50,29 +58,99 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   updatedAt={updatedDate}
   tags={tags}
 >
+  <Fragment slot="rail">
+    {series && <SeriesNav def={series.def} posts={series.posts} index={series.index} />}
+
+    <div class="rail-block">
+      <p class="rail-label kicker">本篇文章</p>
+      <dl class="rail-list">
+        <div class="rail-item">
+          <dt>发布</dt>
+          <dd>
+            <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
+          </dd>
+        </div>
+        {
+          isUpdated && updatedDate && (
+            <div class="rail-item">
+              <dt>更新</dt>
+              <dd>{fmt(updatedDate)}</dd>
+            </div>
+          )
+        }
+        {
+          readingTime && (
+            <div class="rail-item">
+              <dt>阅读</dt>
+              <dd>{readingTime} 分钟</dd>
+            </div>
+          )
+        }
+      </dl>
+      <a href="/blog" class="rail-link link-arrow plain">
+        <Icon name="arrow" size={12} /> 全部文章
+      </a>
+    </div>
+  </Fragment>
+
   <header slot="header" class="post-header">
-    <h1 class="post-title">{title}</h1>
-
-    {description && <p class="post-desc">{description}</p>}
-
-    <div class="post-meta">
-      <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
-      {readingTime && (
-        <span class="reading">{readingTime} 分钟阅读</span>
-      )}
-      {updatedDate && <span class="updated">更新于 {fmt(updatedDate)}</span>}
+    <div class="post-head-main">
       {
-        tags.length > 0 && (
-          <span class="tags">
-            {tags.map((tag) => (
-              <a href={`/blog/tag/${tag}`} class="tag">
-                #{tag}
-              </a>
-            ))}
-          </span>
+        series && (
+          <a
+            href={`/series/${series.def.id}`}
+            class:list={['series-chip', `tone-${series.def.tone}`]}
+          >
+            {series.def.code} · 第 {series.index + 1} / {series.posts.length} 章
+          </a>
         )
       }
+
+      {
+        tags.length > 0 && (
+          <ul class="post-tags">
+            {tags.map((tag) => (
+              <li>
+                <a href={`/blog/tag/${tag}`} class="tag">
+                  {tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      <h1 class="post-title">{title}</h1>
+
+      {description && <p class="post-desc">{description}</p>}
     </div>
+
+    <dl class="post-meta">
+      <div class="meta-item">
+        <dt>发布</dt>
+        <dd>
+          <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
+        </dd>
+      </div>
+
+      {
+        isUpdated && updatedDate && (
+          <div class="meta-item">
+            <dt>更新</dt>
+            <dd>{fmt(updatedDate)}</dd>
+          </div>
+        )
+      }
+
+      {
+        readingTime && (
+          <div class="meta-item">
+            <dt>阅读</dt>
+            <dd>{readingTime} 分钟</dd>
+          </div>
+        )
+      }
+    </dl>
   </header>
 
   <slot />
@@ -82,26 +160,32 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
       (newer || older) && (
         <nav class="post-nav" aria-label="文章导航">
           {newer ? (
-            <a href={newer.href} class="nav-item">
-              <span class="nav-dir">← 较新</span>
+            <a href={newer.href} class="nav-item card plain">
+              <span class="nav-dir mono">
+                <Icon name="arrow" size={12} /> 较新
+              </span>
               <span class="nav-title">{newer.title}</span>
             </a>
           ) : (
-            <span />
+            <span class="nav-spacer" />
           )}
           {older ? (
-            <a href={older.href} class="nav-item nav-next">
-              <span class="nav-dir">较旧 →</span>
+            <a href={older.href} class="nav-item card nav-next plain">
+              <span class="nav-dir mono">
+                较旧 <Icon name="arrow" size={12} />
+              </span>
               <span class="nav-title">{older.title}</span>
             </a>
           ) : (
-            <span />
+            <span class="nav-spacer" />
           )}
         </nav>
       )
     }
 
-    <a href="/blog" class="back-link plain">← 返回文章列表</a>
+    <a href="/blog" class="back-link link-arrow plain">
+      <Icon name="arrow" size={13} /> 返回文章列表
+    </a>
   </footer>
 </Detail>
 
@@ -144,66 +228,136 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
 
 <style>
   .post-header {
+    margin-bottom: var(--space-7);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .post-head-main {
+    min-width: 0;
+  }
+
+  /* 系列角标与标签行互斥时也要有间距 */
+  .post-head-main > .series-chip {
+    margin-bottom: var(--space-4);
+  }
+
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+    list-style: none;
+    padding: 0;
     margin-bottom: var(--space-4);
   }
 
   .post-title {
-    font-size: var(--text-2xl);
-    margin-bottom: var(--space-2);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-cjk);
+    line-height: 1.14;
+    word-break: keep-all;
+    text-wrap: pretty;
   }
 
   /*
    * 导语：文章 description 在页面上的呈现。
    * 它原本只进 <meta>，分享卡片和搜索结果里可见，读了全文反而看不到。
-   * 这里用 --fg-muted 与 --text-base，和标题（2xl/深色）、元信息（sm/更淡）拉开三档层次。
+   * 这里用 muted 色与正文同字号，和标题（大号深色）、元信息（小号更淡）拉开三档层次。
    */
   .post-desc {
-    font-size: var(--text-base);
+    margin-top: var(--space-4);
+    max-width: 58ch;
+    font-size: var(--text-prose);
     line-height: 1.7;
     color: var(--fg-muted);
-    margin-bottom: var(--space-2);
-    max-width: 52ch;
     text-wrap: pretty;
   }
 
+  /* 元信息用 dl 横排：每项是「等宽小标签 + 值」，扫描起来比一句话更快 */
   .post-meta {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3) var(--space-6);
+    margin: var(--space-5) 0 0;
+  }
+
+  /*
+   * 宽屏时元信息挪到左栏（「本篇文章」块），这里就不重复显示；
+   * 窄屏没有左栏，头部这一份才是唯一的。
+   */
+  @media (min-width: 1280px) {
+    .post-meta {
+      display: none;
+    }
+  }
+
+  /* ---------- 左栏 ---------- */
+  .rail-block {
+    margin-top: var(--space-6);
+  }
+
+  .rail-block:first-child {
+    margin-top: 0;
+  }
+
+  .rail-label {
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+    color: var(--fg-faint);
+  }
+
+  .rail-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .rail-item dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-kicker);
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    margin-bottom: 0.25em;
+  }
+
+  .rail-item dd {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rail-link {
+    display: inline-flex;
+    margin-top: var(--space-4);
+    font-size: var(--text-2xs);
+  }
+
+  .meta-item dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-kicker);
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    margin-bottom: 0.3em;
+  }
+
+  .meta-item dd {
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--fg-muted);
-  }
-
-  .reading {
-    color: var(--fg-faint);
-  }
-
-  .updated {
-    color: var(--fg-faint);
-  }
-
-  .tags {
-    display: flex;
-    gap: 0.6em;
-  }
-
-  .tag {
-    color: var(--fg-muted);
-    font-size: var(--text-xs);
-    text-decoration-color: var(--line-strong);
-    transition: color var(--duration) var(--ease);
-  }
-
-  .tag:hover {
-    color: var(--fg);
+    font-variant-numeric: tabular-nums;
   }
 
   /* ---------- 上下篇 ---------- */
   .post-footer {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-5);
   }
 
   .post-nav {
@@ -212,21 +366,21 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
     gap: var(--space-3);
   }
 
+  .nav-spacer {
+    display: block;
+  }
+
   .nav-item {
     display: flex;
     flex-direction: column;
-    gap: 0.3em;
-    text-decoration: none;
+    gap: 0.45em;
+    padding: var(--space-4);
     color: var(--fg);
-    padding: var(--space-2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    transition: border-color var(--duration) var(--ease);
     min-width: 0;
   }
 
   .nav-item:hover {
-    border-color: var(--line-strong);
+    color: var(--fg);
   }
 
   .nav-next {
@@ -234,13 +388,21 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   }
 
   .nav-dir {
-    font-size: var(--text-xs);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: var(--text-2xs);
+    letter-spacing: 0.04em;
     color: var(--fg-faint);
+  }
+
+  .nav-next .nav-dir {
+    justify-content: flex-end;
   }
 
   .nav-title {
     font-size: var(--text-sm);
-    line-height: 1.5;
+    line-height: 1.55;
     /* 长标题最多两行 */
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -249,23 +411,24 @@ const ogImage = slug ? `/og/${slug}.png` : undefined;
   }
 
   .back-link {
-    color: var(--fg-muted);
-    transition: color var(--duration) var(--ease);
-  }
-
-  .back-link:hover {
-    color: var(--fg);
+    align-self: flex-start;
   }
 
   @media (max-width: 640px) {
     .post-title {
-      font-size: var(--text-xl);
+      font-size: var(--text-2xl);
     }
     .post-nav {
       grid-template-columns: 1fr;
     }
+    .nav-spacer {
+      display: none;
+    }
     .nav-next {
       text-align: left;
+    }
+    .nav-next .nav-dir {
+      justify-content: flex-start;
     }
   }
 </style>

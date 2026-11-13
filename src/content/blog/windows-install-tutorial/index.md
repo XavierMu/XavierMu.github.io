@@ -4,6 +4,8 @@ description: "官方镜像去哪下、启动盘怎么做、分区怎么选、Win
 pubDate: 2024-01-19
 updatedDate: 2026-11-12
 tags: ["电脑", "系统安装"]
+series: install
+seriesOrder: 1
 ---
 
 装系统本身不难，容易出问题的是几个决策点：镜像从哪里下载才干净、U 盘要不要先备份、

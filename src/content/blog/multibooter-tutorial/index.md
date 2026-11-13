@@ -3,6 +3,8 @@ title: "MultiBooter 使用教程：手机就是万能启动盘"
 description: "不用 root 也能给 U 盘装 Ventoy；root 之后手机直接虚拟成 U 盘或光驱，还能 PXE 网络启动。"
 pubDate: 2026-11-10T18:58:42+08:00
 tags: ["安卓", "电脑", "启动盘"]
+series: install
+seriesOrder: 4
 ---
 
 U 盘总有不在手边的时候，手机一定在。MultiBooter 就是干这个的：让手机给电脑当启动盘，

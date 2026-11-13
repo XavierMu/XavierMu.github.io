@@ -1,4 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
+import type { SeriesDef } from '../data/series';
 
 export type Post = CollectionEntry<'blog'>;
 
@@ -84,3 +85,95 @@ export function entryReadingTime(entry: { body?: string; data: { description: st
   const text = entry.body ?? entry.data.description;
   return readingTime(text);
 }
+
+/* ==========================================================================
+   系列（Series）
+   ========================================================================== */
+
+/** 一个系列及其按序排好的文章 */
+export interface SeriesGroup {
+  def: SeriesDef;
+  posts: Post[];
+  /** 系列总阅读时长（分钟） */
+  minutes: number;
+  /** 最近一次更新的日期 */
+  updated: Date;
+}
+
+/**
+ * 把文章按 series 归组。
+ *
+ * 排序规则：seriesOrder 优先，缺失的排到末尾再按发布日期。
+ * 完全不参与 series 的文章不会被这里收进去——它们是独立文章，不属于任何系列。
+ */
+export function groupBySeries(posts: Post[], defs: SeriesDef[]): SeriesGroup[] {
+  const buckets = new Map<string, Post[]>();
+
+  for (const post of posts) {
+    const id = post.data.series;
+    if (!id) continue;
+    if (!buckets.has(id)) buckets.set(id, []);
+    buckets.get(id)!.push(post);
+  }
+
+  const groups: SeriesGroup[] = [];
+
+  for (const def of defs) {
+    const list = buckets.get(def.id);
+    if (!list || list.length === 0) continue;
+
+    list.sort(
+      (a, b) =>
+        (a.data.seriesOrder ?? Number.MAX_SAFE_INTEGER) -
+          (b.data.seriesOrder ?? Number.MAX_SAFE_INTEGER) ||
+        a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+    );
+
+    groups.push({
+      def,
+      posts: list,
+      minutes: list.reduce((n, p) => n + entryReadingTime(p), 0),
+      updated: list.reduce<Date>(
+        (latest, p) => (effectiveDate(p) > latest ? effectiveDate(p) : latest),
+        new Date(0)
+      ),
+    });
+  }
+
+  // 最近更新的系列排前面，让首页/列表页有新鲜度
+  return groups.sort((a, b) => b.updated.valueOf() - a.updated.valueOf());
+}
+
+/**
+ * 找出某篇文章在系列中的位置。
+ * 返回 null 表示这篇文章不属于任何系列，调用方据此不渲染章节导航。
+ */
+export function locateInSeries(
+  post: Post,
+  allPosts: Post[],
+  defs: SeriesDef[]
+): { def: SeriesDef; posts: Post[]; index: number; prev: Post | null; next: Post | null } | null {
+  const id = post.data.series;
+  const def = id ? defs.find((d) => d.id === id) : undefined;
+  if (!def) return null;
+
+  const group = groupBySeries(allPosts, [def])[0];
+  if (!group) return null;
+
+  const index = group.posts.findIndex((p) => p.id === post.id);
+  if (index < 0) return null;
+
+  return {
+    def,
+    posts: group.posts,
+    index,
+    prev: index > 0 ? group.posts[index - 1] : null,
+    next: index < group.posts.length - 1 ? group.posts[index + 1] : null,
+  };
+}
+
+/** 文章 slug（去掉扩展名），多处复用 */
+export function slugOf(id: string): string {
+  return id.replace(/\.(md|mdx)$/, '');
+}
+

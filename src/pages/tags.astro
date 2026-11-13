@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
+import Icon from '../components/Icon.astro';
 import { getSortedPosts, countTags } from '../utils/posts';
 import { copy } from '../data/site';
 
@@ -25,24 +26,36 @@ for (const post of posts) {
 ---
 
 <Base title={copy.tags.title} description={copy.tags.description}>
-  <div class="tags">
-    <div class="tags-main">
-      <PageHeader title={copy.tags.title} description={copy.tags.count(tags.length)} />
+  <div class="detail-grid detail-grid--left tags">
+    <div class="detail-main">
+      <PageHeader
+        title={copy.tags.title}
+        kicker={copy.tags.kicker}
+        description={copy.tags.description}
+        meta={copy.tags.count(tags.length)}
+      />
 
       {
         tags.length === 0 ? (
           <p class="muted empty">{copy.tags.empty}</p>
         ) : (
-          <ul class="tag-cloud">
+          <ul class="tag-grid">
             {tags.map(([tag, count]) => {
-              const scale = 1 + (count / max) * 0.35;
+              // 字数占比决定色条长度，比单纯的字号缩放更容易横向比较
+              const ratio = Math.round((count / max) * 100);
               return (
                 <li>
-                  <a href={`/blog/tag/${tag}`} class="tag-item">
-                    <span class="tag-name" style={`font-size:${scale.toFixed(2)}em`}>
-                      {tag}
+                  <a href={`/blog/tag/${tag}`} class="tag-tile">
+                    <span class="tag-tile__top">
+                      <span class="tag-name">
+                        <span class="tag-hash" aria-hidden="true">#</span>
+                        {tag}
+                      </span>
+                      <span class="tag-count mono">{count}</span>
                     </span>
-                    <span class="tag-count mono">{count}</span>
+                    <span class="tag-bar" aria-hidden="true">
+                      <i style={`width:${ratio}%`} />
+                    </span>
                   </a>
                 </li>
               );
@@ -54,9 +67,9 @@ for (const post of posts) {
 
     {
       tags.length > 0 && (
-        <aside class="tags-aside">
+        <aside class="detail-aside tags-aside">
           <section class="side-block">
-            <h2 class="side-title">{copy.tags.aside.top}</h2>
+            <h2 class="side-title kicker">{copy.tags.aside.top}</h2>
             <ul class="side-list">
               {topTags.map(([tag, count]) => (
                 <li>
@@ -70,7 +83,7 @@ for (const post of posts) {
           </section>
 
           <section class="side-block">
-            <h2 class="side-title">{copy.tags.aside.recent}</h2>
+            <h2 class="side-title kicker">{copy.tags.aside.recent}</h2>
             <ul class="side-list">
               {recentTags.map((tag) => (
                 <li>
@@ -83,17 +96,17 @@ for (const post of posts) {
           </section>
 
           <section class="side-block">
-            <h2 class="side-title">{copy.tags.aside.note}</h2>
-            <p class="side-note">
-              {copy.tags.note}
-            </p>
+            <h2 class="side-title kicker">{copy.tags.aside.note}</h2>
+            <p class="side-note">{copy.tags.note}</p>
           </section>
         </aside>
       )
     }
 
     <p class="back">
-      <a href="/blog" class="plain muted">← 全部文章</a>
+      <a href="/blog" class="link-arrow plain">
+        <Icon name="arrow" size={13} /> 全部文章
+      </a>
     </p>
   </div>
 </Base>
@@ -101,98 +114,103 @@ for (const post of posts) {
 <style>
   /* 与归档页、项目列表页保持同一套底部返回样式 */
   .back {
-    margin-top: var(--space-4);
+    grid-column: 1 / -1;
+    margin-top: var(--space-7);
     font-size: var(--text-sm);
   }
 
-  .tags {
-    width: 100%;
-    max-width: var(--width-container);
-    margin-inline: auto;
-    padding-inline: var(--space-3);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    justify-content: center;
-  }
-
-  @media (min-width: 768px) {
-    .tags {
-      padding-inline: var(--space-4);
-    }
-  }
-
-  .tags-main {
-    min-width: 0;
-  }
-
-  .tags-aside {
-    display: none;
-  }
-
-  @media (min-width: 1280px) {
-    .tags {
-      grid-template-columns: minmax(0, 1fr) var(--width-aside);
-      column-gap: var(--gap-aside);
-      align-items: start;
-    }
-
-    .tags-aside {
-      display: block;
-      position: sticky;
-      top: calc(64px + var(--space-4));
-      font-size: var(--text-sm);
-    }
-  }
-
-  .tag-cloud {
+  /*
+   * 标签不再是单行药丸：做成等宽方格，每格一条按篇数比例的色条。
+   * 单行 chip 在只有 8 个标签时会剩下一大片空白，方格能把版面铺满，
+   * 横条也让「哪个标签写得最多」一眼可比。
+   */
+  .tag-grid {
     list-style: none;
     padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-3);
   }
 
-  .tag-item {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.4em;
-    padding: 0.5em 0.95em;
+  .tag-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-4);
     border: 1px solid var(--line);
-    border-radius: var(--radius);
+    border-radius: var(--radius-card);
+    background: var(--bg);
     text-decoration: none;
     color: var(--fg);
-    line-height: 1.4;
     transition: border-color var(--duration) var(--ease),
-      background-color var(--duration) var(--ease);
+      background-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease);
   }
 
-  .tag-item:hover {
+  .tag-tile:hover {
     border-color: var(--line-strong);
     background: var(--bg-subtle);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .tag-tile__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .tag-hash {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--fg-faint);
+    margin-right: 0.15em;
   }
 
   .tag-name {
-    font-family: var(--font-serif);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-cjk);
+    text-wrap: pretty;
   }
 
   .tag-count {
+    flex-shrink: 0;
     font-size: var(--text-xs);
     color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 色条：轨道用最淡的线色，填充用正文色压暗，两主题都不刺眼 */
+  .tag-bar {
+    display: block;
+    height: 3px;
+    margin-top: auto;
+    border-radius: 999px;
+    background: var(--line-faint);
+    overflow: hidden;
+  }
+
+  .tag-bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fg-muted);
+    opacity: 0.55;
+    transition: opacity var(--duration) var(--ease);
+  }
+
+  .tag-tile:hover .tag-bar i {
+    opacity: 0.9;
   }
 
   /* ---------- 右栏 ---------- */
   .side-block + .side-block {
-    margin-top: var(--space-4);
+    margin-top: var(--space-6);
   }
 
   .side-title {
-    font-size: var(--text-xs);
-    font-family: var(--font-sans);
-    font-weight: 500;
-    color: var(--fg-faint);
-    letter-spacing: 0.08em;
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
   }
 
   .side-list {
@@ -213,7 +231,7 @@ for (const post of posts) {
   .side-link {
     color: var(--fg-muted);
     font-size: var(--text-xs);
-    text-decoration-color: var(--line-strong);
+    text-decoration: none;
     transition: color var(--duration) var(--ease);
   }
 
@@ -234,6 +252,6 @@ for (const post of posts) {
   }
 
   .empty {
-    padding-block: var(--space-5);
+    padding-block: var(--space-7);
   }
 </style>

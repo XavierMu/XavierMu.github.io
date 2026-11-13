@@ -1,38 +1,87 @@
 ---
 /**
  * 页面标题区。用于列表页、关于页等。
+ * 结构：等宽 kicker + 大标题 + 一句说明，与参考站的区块标题同一套节奏。
  */
 interface Props {
   title: string;
   description?: string;
+  /** 标题上方的等宽小标签，如「ARCHIVE / 归档」 */
+  kicker?: string;
+  /** 右侧统计，如「共 10 篇」 */
+  meta?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, kicker, meta } = Astro.props;
 ---
 
 <header class="page-header">
-  <h1 class="page-title">{title}</h1>
-  {description && <p class="page-desc muted">{description}</p>}
+  <div class="page-header__main">
+    {kicker && <p class="kicker">{kicker}</p>}
+    <h1 class="page-title">{title}</h1>
+    {description && <p class="page-desc">{description}</p>}
+  </div>
+  {meta && <p class="page-meta mono">{meta}</p>}
 </header>
 
 <style>
+  /*
+   * 标题区吃满它所在的那一列，这样右下角的统计数字贴的是列边缘。
+   * 注意不要再给 grid-column: 1 / -1——一旦跨列，数字会跑到右栏外侧，
+   * 和下方的正文列各行其是。
+   */
   .page-header {
-    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    padding-bottom: var(--space-5);
+    margin-bottom: var(--space-6);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .page-header__main {
+    min-width: 0;
+    flex: 1 1 22rem;
   }
 
   .page-title {
-    font-size: var(--text-2xl);
-    margin-bottom: var(--space-1);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-cjk);
+    line-height: var(--leading-display);
+    margin-top: var(--space-3);
+    word-break: keep-all;
   }
 
   .page-desc {
+    margin-top: var(--space-3);
     font-size: var(--text-base);
-    max-width: var(--width-prose);
+    color: var(--fg-muted);
+    max-width: 52ch;
+    text-wrap: pretty;
+  }
+
+  .page-meta {
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+    padding-bottom: 0.35em;
+    white-space: nowrap;
+    margin-left: auto;
   }
 
   @media (max-width: 640px) {
     .page-title {
-      font-size: var(--text-xl);
+      font-size: var(--text-2xl);
+    }
+    .page-header {
+      margin-bottom: var(--space-5);
+    }
+    /* 窄屏统计换行到标题下方，不再挤在右上角 */
+    .page-meta {
+      margin-left: 0;
+      padding-bottom: 0;
     }
   }
 </style>

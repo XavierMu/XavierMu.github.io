@@ -1,75 +1,177 @@
 /* ==========================================================================
-   设计变量 —— 极简黑白灰
-   所有颜色、字号、间距集中在此，改主题只改这一个文件。
+   设计变量
+   --------------------------------------------------------------------------
+   视觉语言参考 gpui-kit.com：近黑前景色、发丝级分隔线、紧排的大字标题、
+   等宽小标签（kicker）、6px 控件圆角、1280px 内容宽度。
+   所有颜色、字号、间距集中在此，换主题只改这一个文件。
    ========================================================================== */
 
 :root {
   /* ---------- 颜色：浅色 ---------- */
-  --bg: #fdfdfc;
-  --bg-subtle: #f6f5f3;
-  --fg: #1a1a1a;
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-inset: #f5f5f5;
+  --bg-elevated: #ffffff;
+
   /*
-   * 三个文字层级都要过 WCAG AA（正文 4.5:1），同时彼此拉开差距：
-   *   fg 17.10 / muted 6.27 / faint 4.87
-   * faint 原来取 #9e9e9e 只有 2.63:1，日期、图注这类次要信息实际读不清。
+   * 文字三级，都要过 WCAG AA（正文 4.5:1），同时彼此拉开差距：
+   *   fg 19.06 / muted 7.81 / faint 4.74
    */
-  --fg-muted: #5f5f5f;
-  --fg-faint: #707070;
-  --line: #e5e4e2;
-  --line-strong: #d0cfcc;
-  --accent: #1a1a1a;
+  --fg: #0a0a0a;
+  --fg-muted: #525252;
+  --fg-faint: #737373;
+
+  /* 分隔线三级：faint 用于卡片内部，line 用于常规边界，strong 用于强调 */
+  --line-faint: #f0f0f0;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+
+  /* 强调色只在正文链接与少量状态处出现，界面主体保持无彩色 */
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --success: #16a34a;
+
+  /*
+   * 系列配色。浅色语义下用「极淡底 + 饱和前景」，
+   * 卡片与角标靠这三档拉开系列差异，又不至于抢走正文的注意力。
+   */
+  --tone-blue: #2563eb;
+  --tone-blue-bg: #eef4ff;
+  --tone-green: #16a34a;
+  --tone-green-bg: #edfbf3;
+  --tone-violet: #7c3aed;
+  --tone-violet-bg: #f4f0ff;
+  --tone-amber: #d97706;
+  --tone-amber-bg: #fff8eb;
+  --tone-rose: #e11d48;
+  --tone-rose-bg: #fff1f4;
 
   /* 代码块 */
-  --code-bg: #f6f5f3;
-  --code-border: #e8e7e4;
+  --code-bg: #fafafa;
+  --code-border: #ebebeb;
 
   /* ---------- 字体 ---------- */
-  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
-  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", Georgia, serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", "SF Mono", Consolas,
-    "Liberation Mono", monospace;
+  /*
+   * 中文字体栈的关键：拉丁字母与中文分开指定。
+   *
+   * 如果整条栈里中文字体排在前面（或只有中文字体），英文和数字也会被中文字体接管——
+   * PingFang 的拉丁字形比 SF Pro 更宽更方，标题里的「Windows」「KernelSU」会明显发糊。
+   * 所以前面放系统拉丁字体，让它们优先吃掉 ASCII，中文字体只兜住汉字。
+   *
+   * 中文侧按平台最优顺序：macOS 苹方 → Windows 微软雅黑 / 较新的 MiSans →
+   * Linux 思源黑体。HarmonyOS Sans 与 MiSans 是这两代国产系统屏显质量最好的黑体，
+   * 装了就优先用，没装自动跳过。
+   */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+    'Segoe UI Variable Text', 'Segoe UI', 'Inter', 'Roboto',
+    /* 中文 */ 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Source Han Sans SC',
+    'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Hiragino Sans GB',
+    sans-serif;
 
-  /* ---------- 字号：1.25 倍率 ---------- */
-  --text-xs: 0.75rem;    /* 12px 日期、图注 */
-  --text-sm: 0.875rem;   /* 14px 辅助信息 */
-  --text-base: 1rem;     /* 16px 正文 */
-  --text-lg: 1.25rem;    /* 20px 小标题 */
-  --text-xl: 1.5625rem;  /* 25px 区块标题 */
-  --text-2xl: 1.9375rem; /* 31px 页面标题 */
-  --text-3xl: 2.4375rem; /* 39px 首屏标题 */
+  /* 等宽同样先拉丁后中文：中文注释用等宽汉字，英文代码用系统等宽 */
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Mono',
+    'Segoe UI Mono', Menlo, Consolas, 'Liberation Mono',
+    'Sarasa Mono SC', 'Noto Sans Mono CJK SC', monospace;
+
+  /*
+   * 中文正文行高：汉字是方块字、没有 x-height 做视觉缓冲，
+   * 拉丁字体常用的 1.5 会显得拥挤，中文习惯 1.75–1.8。
+   * 这个值同时作用于长文与界面文字，界面文字单独用 --leading-ui 收窄。
+   */
+  --leading-body: 1.8;
+  --leading-ui: 1.55;
+
+  /* ---------- 字号 ---------- */
+  --text-2xs: 0.6875rem; /* 11px  kicker、角标 */
+  --text-xs: 0.75rem; /*    12px  元信息 */
+  --text-sm: 0.8125rem; /*  13px  导航、辅助文字 */
+  --text-md: 0.875rem; /*   14px  按钮、列表摘要 */
+  --text-base: 0.9375rem; /* 15px 界面正文 */
+  --text-prose: 1rem; /*    16px  长文正文 */
+  --text-lg: 1.0625rem; /*  17px  卡片标题 */
+  --text-xl: 1.3125rem; /*  21px  区块标题 */
+  --text-2xl: 1.75rem; /*   28px  页面标题 */
+  --text-3xl: 2.125rem; /*  34px  次级首屏 */
+  --text-display: clamp(2.5rem, 5.2vw, 3.5rem); /* 40–56px 首屏大标题 */
+
+  /* ---------- 字重 ---------- */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semi: 600;
+  --weight-display: 660;
 
   /* ---------- 行高 ---------- */
-  --leading-body: 1.75;
-  --leading-tight: 1.3;
-  --leading-heading: 1.25;
+  --leading-tight: 1.35;
+  --leading-display: 1.12;
 
-  /* ---------- 间距：8px 基准 ---------- */
-  --space-1: 0.5rem;   /* 8 */
-  --space-2: 1rem;     /* 16 */
-  --space-3: 1.5rem;   /* 24 */
-  --space-4: 2.5rem;   /* 40 */
-  --space-5: 4rem;     /* 64 */
-  --space-6: 6rem;     /* 96 */
+  /* ---------- 字距 ---------- */
+  /*
+   * 负字距只对拉丁字母有效。
+   * 汉字本身是等宽方块，负字距会让标题里的中文字挤在一起、笔画粘连，
+   * 所以标题默认走 --tracking-cjk（0），负值只留给纯拉丁的场合。
+   */
+  --tracking-kicker: 0.08em;
+  /* 中文标题：不跟踪，保持方块字的呼吸 */
+  --tracking-cjk: 0;
+
+  /* ---------- 间距：4px 基准 ---------- */
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /*  8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /*   16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /*   32 */
+  --space-7: 3rem; /*   48 */
+  --space-8: 4rem; /*   64 */
+
+  /* 区块之间的垂直节奏，参考站用 clamp 避免小屏过大 */
+  --section-gap: clamp(3.5rem, 7vw, 5.5rem);
 
   /* ---------- 尺寸 ---------- */
-  --width-container: 1080px;
-  /* 正文列：容器内宽 1000px - 右栏 200px - 间距 48px = 752px */
-  --width-prose: 68ch;
-  /* 详情页（文章/项目/关于）共用的栅格：正文 + 右栏 */
-  --width-aside: 200px;
-  --gap-aside: var(--space-4);
-  --radius: 4px;
-  --radius-code: 6px;
+  --width-container: 1280px;
+  /*
+   * 正文列宽。
+   * 中文一行 38–42 字最舒服，按 16px 字号算约 610–670px；42rem ≈ 672px。
+   * 之前是 46rem（736px，一行 46 字），实测偏宽，眼睛回行容易串行。
+   */
+  --width-prose: 42rem;
+  --width-aside: 220px; /* 详情页右栏：目录 / 联系信息 */
+  /* 详情页左栏与右栏（目录）固定宽度，剩下的空间由正文居中吃掉 */
+  --width-rail: 220px;
+  --width-toc: 200px;
+  --gap-aside: var(--space-7);
+
+  /*
+   * 顶栏高度。56px 是「刚好装下一个 32px 控件 + 上下各 12px」的最小舒服值，
+   * 再高就只是为了放 logo 而占据正文空间。
+   * 详情页左右栏的 sticky 偏移也读它，改这里两侧栏会跟着对齐。
+   */
+  --nav-height: 56px;
+  --gutter: var(--space-5);
+
+  /* ---------- 圆角 ---------- */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius: 6px; /*       控件：按钮、输入框 */
+  --radius-card: 10px; /* 卡片 */
+  --radius-surface: 14px; /* 容器 / 窗口 */
+  --radius-pill: 999px;
+
+  /* ---------- 阴影 ---------- */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 1px rgb(0 0 0 / 0.03);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 28px -18px rgb(0 0 0 / 0.18);
+  --shadow-window: 0 1px 2px rgb(0 0 0 / 0.05),
+    0 18px 40px -24px rgb(0 0 0 / 0.28), 0 40px 72px -48px rgb(0 0 0 / 0.22);
 
   /* ---------- 动效 ---------- */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration: 150ms;
+  --duration: 160ms;
 
-  /* ---------- 背景点阵 ---------- */
-  --dot-color: #d8d6d2;
-  --dot-size: 24px;
-  --dot-opacity: 0.55;
+  /* ---------- 背景网格 ---------- */
+  --grid-color: color-mix(in srgb, var(--fg) 6%, transparent);
+  --grid-size: 64px;
+  --grid-opacity: 1;
 
   color-scheme: light;
 }
@@ -77,40 +179,90 @@
 /* ---------- 颜色：深色 ---------- */
 /* 支持手动切换（data-theme）与系统偏好两种入口 */
 [data-theme='dark'] {
-  --bg: #121212;
-  --bg-subtle: #1a1a1a;
-  --fg: #e8e6e3;
-  /* 深色同样三级都过 4.5:1：fg 15.04 / muted 7.34 / faint 5.08 */
-  --fg-muted: #a2a2a2;
-  --fg-faint: #858585;
-  --line: #2a2a2a;
-  --line-strong: #3a3a3a;
-  --accent: #e8e6e3;
+  --bg: #0a0a0a;
+  --bg-subtle: #111111;
+  --bg-inset: #171717;
+  --bg-elevated: #141414;
 
-  --code-bg: #1a1a1a;
-  --code-border: #2a2a2a;
+  /* 深色三级都过 4.5:1：fg 17.4 / muted 7.6 / faint 5.3 */
+  --fg: #fafafa;
+  --fg-muted: #a3a3a3;
+  --fg-faint: #8f8f8f;
 
-  /* 深色下的点阵：比浅色略亮一点，保持可见但不刺眼 */
-  --dot-color: #2f2f2f;
+  --line-faint: #1c1c1c;
+  --line: #262626;
+  --line-strong: #3f3f3f;
+
+  --accent: #7aa7ff;
+  --accent-soft: #14213d;
+  --success: #4ade80;
+
+  /* 深色下前景提亮、底色压暗，保证角标文字对比度仍过 AA */
+  --tone-blue: #8ab4ff;
+  --tone-blue-bg: #14213d;
+  --tone-green: #6ee7a0;
+  --tone-green-bg: #10261a;
+  --tone-violet: #c4b5fd;
+  --tone-violet-bg: #1e1633;
+  --tone-amber: #fbbf24;
+  --tone-amber-bg: #2a1e0a;
+  --tone-rose: #fda4af;
+  --tone-rose-bg: #2c1119;
+
+  --code-bg: #111111;
+  --code-border: #242424;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 28px -18px rgb(0 0 0 / 0.8);
+  --shadow-window: 0 1px 2px rgb(0 0 0 / 0.6),
+    0 18px 40px -24px rgb(0 0 0 / 0.9), 0 40px 72px -48px rgb(0 0 0 / 0.9);
+
+  --grid-color: color-mix(in srgb, var(--fg) 7%, transparent);
 
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #121212;
-    --bg-subtle: #1a1a1a;
-    --fg: #e8e6e3;
-    --fg-muted: #a2a2a2;
-    --fg-faint: #858585;
-    --line: #2a2a2a;
-    --line-strong: #3a3a3a;
-    --accent: #e8e6e3;
+    --bg: #0a0a0a;
+    --bg-subtle: #111111;
+    --bg-inset: #171717;
+    --bg-elevated: #141414;
 
-    --code-bg: #1a1a1a;
-    --code-border: #2a2a2a;
+    --fg: #fafafa;
+    --fg-muted: #a3a3a3;
+    --fg-faint: #8f8f8f;
 
-    --dot-color: #2f2f2f;
+    --line-faint: #1c1c1c;
+    --line: #262626;
+    --line-strong: #3f3f3f;
+
+    --accent: #7aa7ff;
+    --accent-soft: #14213d;
+    --success: #4ade80;
+
+    --tone-blue: #8ab4ff;
+    --tone-blue-bg: #14213d;
+    --tone-green: #6ee7a0;
+    --tone-green-bg: #10261a;
+    --tone-violet: #c4b5fd;
+    --tone-violet-bg: #1e1633;
+    --tone-amber: #fbbf24;
+    --tone-amber-bg: #2a1e0a;
+    --tone-rose: #fda4af;
+    --tone-rose-bg: #2c1119;
+
+    --code-bg: #111111;
+    --code-border: #242424;
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5), 0 1px 1px rgb(0 0 0 / 0.3);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 12px 28px -18px rgb(0 0 0 / 0.8);
+    --shadow-window: 0 1px 2px rgb(0 0 0 / 0.6),
+      0 18px 40px -24px rgb(0 0 0 / 0.9), 0 40px 72px -48px rgb(0 0 0 / 0.9);
+
+    --grid-color: color-mix(in srgb, var(--fg) 7%, transparent);
 
     color-scheme: dark;
   }

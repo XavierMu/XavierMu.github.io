@@ -1,0 +1,400 @@
+---
+/**
+ * 系列详情页：一个系列的全部章节。
+ *
+ * 版式对齐 gpui-kit 的文档页——左侧是章节列表，右侧是内容。
+ * 这里左侧列出该系列的所有章节，右侧是该系列的阅读入口与概览。
+ */
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { sortByRecentlyUpdated, groupBySeries, entryReadingTime, slugOf } from '../../utils/posts';
+import { seriesDefs } from '../../data/series';
+import { copy } from '../../data/site';
+
+export async function getStaticPaths() {
+  const posts = sortByRecentlyUpdated(await getCollection('blog', ({ data }) => !data.draft));
+  const groups = groupBySeries(posts, seriesDefs);
+
+  return groups.map((group) => ({
+    params: { id: group.def.id },
+    props: { group },
+  }));
+}
+
+const { group } = Astro.props;
+const { def, posts, minutes, updated } = group;
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Shanghai',
+  });
+
+const first = posts[0];
+---
+
+<Base title={def.title} description={def.description}>
+  <article class:list={['detail-grid detail-grid--left', `tone-${def.tone}`]}>
+    <!-- 左栏：章节列表，对应参考站文档页的侧边目录 -->
+    <aside class="series-nav">
+      <a href="/series" class="series-nav__back plain">
+        <Icon name="arrow" size={12} /> 全部系列
+      </a>
+
+      <p class="series-nav__label kicker">{def.code}</p>
+      <p class="series-nav__title">{def.title}</p>
+
+      <ol class="series-nav__list">
+        {
+          posts.map((post, i) => (
+            <li>
+              <a href={`/blog/${slugOf(post.id)}`} class="series-nav__item plain">
+                <span class="series-nav__num mono">
+                  {String(post.data.seriesOrder ?? i + 1).padStart(2, '0')}
+                </span>
+                <span class="series-nav__item-title">{post.data.title}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </aside>
+
+    <div class="detail-main series-main">
+      <header class="series-header">
+        <div class="series-header__meta">
+          <span class="series-chip">{def.code}</span>
+          <span class="series-header__stat">
+            <strong class="mono">{posts.length}</strong> 章
+          </span>
+          <span class="series-header__stat mono">{minutes} 分钟</span>
+          <span class="series-header__stat">更新于 {fmt(updated)}</span>
+        </div>
+
+        <h1 class="series-header__title">{def.title}</h1>
+        <p class="series-header__desc">{def.description}</p>
+
+        {
+          first && (
+            <a href={`/blog/${slugOf(first.id)}`} class="btn btn--primary plain series-header__start">
+              从第一章开始
+              <Icon name="arrow" size={15} />
+            </a>
+          )
+        }
+      </header>
+
+      <ol class="chapter-list">
+        {
+          posts.map((post, i) => (
+            <li class="chapter">
+              <a href={`/blog/${slugOf(post.id)}`} class="chapter__link plain">
+                <span class="chapter__num mono">
+                  {String(post.data.seriesOrder ?? i + 1).padStart(2, '0')}
+                </span>
+                <div class="chapter__body">
+                  <h2 class="chapter__title">{post.data.title}</h2>
+                  <p class="chapter__desc">{post.data.description}</p>
+                  <div class="chapter__meta">
+                    <span class="mono">{entryReadingTime(post)} 分钟</span>
+                    {
+                      post.data.tags.slice(0, 3).map((tag) => (
+                        <span class="tag">{tag}</span>
+                      ))
+                    }
+                  </div>
+                </div>
+                <span class="chapter__go" aria-hidden="true">
+                  <Icon name="arrow" size={14} />
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+
+      <footer class="series-footer">
+        <p class="series-footer__note">
+          这个系列按顺序读效果最好；但每篇也能单独看，需要哪步直接点哪篇。
+        </p>
+        <a href="/series" class="link-arrow plain">
+          <Icon name="arrow" size={13} /> 返回全部系列
+        </a>
+      </footer>
+    </div>
+  </article>
+</Base>
+
+<style>
+  /* ---------- 左栏 ---------- */
+  .series-nav {
+    display: none;
+    font-size: var(--text-sm);
+  }
+
+  @media (min-width: 1280px) {
+    .series-nav {
+      display: block;
+      position: sticky;
+      top: calc(var(--nav-height) + var(--space-7));
+      max-height: calc(100vh - var(--nav-height) - var(--space-7) - var(--space-5));
+      overflow-y: auto;
+      scrollbar-width: thin;
+      padding-right: var(--space-4);
+      border-right: 1px solid var(--line);
+    }
+
+    /* 有左栏时，右栏让位给章节列表：两栏都是导航，没必要并存 */
+    :global(.detail-grid) {
+      grid-template-columns: var(--width-aside) minmax(0, 1fr);
+    }
+  }
+
+  .series-nav__back {
+    /*
+     * 必须是块级：紧随其后的 .kicker 是 inline-flex，如果这里留 inline-flex，
+     * 两者会挤在同一行，显示成「→ 全部系列SETUP」。
+     */
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.35em;
+    margin-bottom: var(--space-5);
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+    transition: color var(--duration) var(--ease);
+  }
+
+  .series-nav__back:hover {
+    color: var(--fg);
+  }
+
+  .series-nav__back svg {
+    transform: rotate(180deg);
+  }
+
+  .series-nav__label {
+    margin-bottom: var(--space-3);
+    color: var(--tone);
+  }
+
+  .series-nav__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+    letter-spacing: var(--tracking-cjk);
+  }
+
+  .series-nav__list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
+  }
+
+  .series-nav__item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.4em 0.5em 0.4em 0;
+    border-radius: var(--radius-xs);
+    color: var(--fg-muted);
+    line-height: 1.5;
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .series-nav__item:hover {
+    color: var(--fg);
+    background: var(--bg-subtle);
+  }
+
+  .series-nav__num {
+    flex-shrink: 0;
+    font-size: var(--text-2xs);
+    color: var(--tone);
+    opacity: 0.7;
+  }
+
+  .series-nav__item-title {
+    font-size: var(--text-xs);
+  }
+
+  /* ---------- 右栏 ---------- */
+  .series-main {
+    min-width: 0;
+  }
+
+  .series-header {
+    padding-bottom: var(--space-6);
+    margin-bottom: var(--space-6);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .series-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--fg-faint);
+  }
+
+  .series-header__stat strong {
+    color: var(--tone);
+    font-weight: var(--weight-semi);
+  }
+
+  .series-header__title {
+    margin-top: var(--space-3);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-cjk);
+    line-height: 1.16;
+  }
+
+  .series-header__desc {
+    margin-top: var(--space-3);
+    max-width: 58ch;
+    font-size: var(--text-prose);
+    line-height: var(--leading-body);
+    color: var(--fg-muted);
+    text-wrap: pretty;
+  }
+
+  .series-header__start {
+    margin-top: var(--space-5);
+  }
+
+  /* ---------- 章节列表 ---------- */
+  .chapter-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .chapter__link {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) 1.5rem;
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    background: var(--bg-elevated);
+    transition: border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease), transform var(--duration) var(--ease);
+  }
+
+  .chapter__link:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-card);
+    transform: translateX(2px);
+  }
+
+  .chapter__num {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--tone);
+    padding-top: 0.15em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chapter__body {
+    min-width: 0;
+  }
+
+  .chapter__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semi);
+    line-height: 1.45;
+    letter-spacing: var(--tracking-cjk);
+    text-wrap: pretty;
+  }
+
+  .chapter__desc {
+    margin-top: 0.35em;
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--fg-muted);
+    text-wrap: pretty;
+  }
+
+  .chapter__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4em 0.6em;
+    margin-top: var(--space-3);
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
+  }
+
+  .chapter__go {
+    display: grid;
+    place-items: center;
+    color: var(--fg-faint);
+    padding-top: 0.25em;
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity var(--duration) var(--ease),
+      transform var(--duration) var(--ease), color var(--duration) var(--ease);
+  }
+
+  .chapter__link:hover .chapter__go {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--fg);
+  }
+
+  @media (hover: none) {
+    .chapter__go {
+      opacity: 0.4;
+      transform: none;
+    }
+  }
+
+  .series-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .series-footer__note {
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--fg-muted);
+    max-width: 52ch;
+  }
+
+  @media (max-width: 640px) {
+    .series-header__title {
+      font-size: var(--text-2xl);
+    }
+
+    .chapter__link {
+      grid-template-columns: 2rem minmax(0, 1fr);
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-3);
+    }
+
+    .chapter__go {
+      display: none;
+    }
+
+    .chapter__title {
+      font-size: var(--text-base);
+    }
+  }
+</style>

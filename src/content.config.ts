@@ -14,6 +14,14 @@ const blog = defineCollection({
     pubDate: z.coerce.date(),
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
+    /**
+     * 所属系列（对应 src/data/series.ts 里的 id）。
+     * 同一系列的文章会在详情页左侧生成章节导航，并在 /series 下成组展示。
+     * 不填即独立文章。
+     */
+    series: z.string().optional(),
+    /** 在系列内的顺序，从 1 开始；同系列内必须唯一，由 series 校验兜底 */
+    seriesOrder: z.number().int().positive().optional(),
     draft: z.boolean().default(false),
   }),
 });

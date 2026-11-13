@@ -4,6 +4,8 @@ description: "网上说「进 PE 要关杀毒、关安全启动」，其实混�
 pubDate: 2024-02-06
 updatedDate: 2026-11-11
 tags: ["电脑", "启动盘", "安全"]
+series: install
+seriesOrder: 2
 ---
 
 装系统、修引导、抢救数据，绕不开进 PE。而一搜「进 PE」，几乎每篇教程都会带一句

@@ -4,6 +4,8 @@ description: 从安装到配置的完整步骤，以及最容易踩的那个坑�
 pubDate: 2026-11-09
 updatedDate: 2026-11-11
 tags: ["网络代理"]
+series: network
+seriesOrder: 2
 ---
 
 学校用的是[**网瑞达 WebVPN**](https://www.wrdtech.com/)（clientless 反向代理）。它的工作方式是：你连上门户之后，门户把校内每个页面改写成 `https://webvpn.sdust.edu.cn/https/<hex>/<path>` 这种带前缀的地址，再由它转发进来。

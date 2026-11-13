@@ -20,7 +20,7 @@ const { items } = Astro.props;
 {
   items.length > 0 && (
     <nav class="toc" aria-labelledby="toc-heading">
-      <p class="toc-heading" id="toc-heading">目录</p>
+      <p class="toc-heading kicker" id="toc-heading">本页内容</p>
       <ul class="toc-list">
         {items.map((item) => (
           <li>
@@ -83,7 +83,7 @@ const { items } = Astro.props;
           if (last) setActive(last);
         }
       },
-      { rootMargin: '-80px 0px -70% 0px', threshold: 0 }
+      { rootMargin: '-88px 0px -70% 0px', threshold: 0 }
     );
 
     headings.forEach((h) => observer.observe(h));
@@ -115,29 +115,27 @@ const { items } = Astro.props;
   }
 
   .toc-heading {
-    font-family: var(--font-sans);
-    font-size: var(--text-xs);
-    font-weight: 500;
-    color: var(--fg-faint);
-    letter-spacing: 0.08em;
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
   }
 
   .toc-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    border-left: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.1em;
   }
 
   .toc-link {
     display: block;
-    padding: 0.32em 0 0.32em 0.9em;
-    margin-left: -1px;
+    padding: 0.28em 0 0.28em 0.85em;
     border-left: 1px solid transparent;
+    margin-left: -1px;
     color: var(--fg-muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
     text-decoration: none;
-    line-height: 1.5;
     transition: color var(--duration) var(--ease),
       border-color var(--duration) var(--ease);
   }
@@ -148,6 +146,7 @@ const { items } = Astro.props;
 
   .toc-link.is-active {
     color: var(--fg);
+    font-weight: var(--weight-medium);
     border-left-color: var(--fg);
   }
 </style>

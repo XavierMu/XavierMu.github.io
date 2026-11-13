@@ -13,17 +13,21 @@ function isActive(href: string): boolean {
   if (href === '/') return currentPath === '/';
   return currentPath === href || currentPath.startsWith(href + '/');
 }
+
+// 「搜索」不再占用主导航名额，改到右侧做成按钮：既省空间，也更像一个工具
+const navItems = site.nav.filter((item) => item.href !== '/search');
 ---
 
 <header class="site-header">
   <div class="container header-inner">
     <a href="/" class="brand plain" aria-label={`${site.title} 首页`}>
-      {site.hero.title}
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">{site.hero.title}</span>
     </a>
 
     <nav class="nav" aria-label="主导航">
       {
-        site.nav.map((item) => (
+        navItems.map((item) => (
           <a
             href={item.href}
             class:list={['nav-link', 'plain', { active: isActive(item.href) }]}
@@ -33,9 +37,39 @@ function isActive(href: string): boolean {
           </a>
         ))
       }
+    </nav>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="search-btn"
+        aria-label="搜索"
+        title="搜索（按 / 或 ⌘K）"
+        data-search-open
+      >
+        <Icon name="search" size={15} />
+        <span class="search-label">搜索</span>
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
+      </button>
+
+      {
+        site.social.map((item) => (
+          <a
+            href={item.href}
+            class="icon-btn plain"
+            aria-label={item.label}
+            title={item.label}
+            target={item.href.startsWith('http') ? '_blank' : undefined}
+            rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+          >
+            <Icon name={item.icon} size={16} />
+          </a>
+        ))
+      }
+
       <button
         id="theme-toggle"
-        class="theme-toggle"
+        class="icon-btn"
         type="button"
         aria-label="切换深色模式"
         title="切换深色模式"
@@ -43,76 +77,243 @@ function isActive(href: string): boolean {
         <span class="icon-sun"><Icon name="sun" size={16} /></span>
         <span class="icon-moon"><Icon name="moon" size={16} /></span>
       </button>
-    </nav>
+
+      {/*
+       * 窄屏把主导航收进这里：文字导航一列放下比挤成一行更好读，
+       * 搜索 / 社交 / 主题仍留在栏内，随时可用。
+       * 用原生 details，不依赖 JS 也能开合；外面只补了「点空白关闭」。
+       */}
+      <details class="menu">
+        <summary class="icon-btn plain menu-btn" aria-label="菜单">
+          <span class="menu-open"><Icon name="menu" size={18} /></span>
+          <span class="menu-close"><Icon name="close" size={18} /></span>
+        </summary>
+        <div class="menu-panel">
+          <nav class="menu-nav" aria-label="导航">
+            {
+              navItems.map((item) => (
+                <a
+                  href={item.href}
+                  class:list={['menu-link', 'plain', { active: isActive(item.href) }]}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                >
+                  {item.label}
+                </a>
+              ))
+            }
+          </nav>
+          <div class="menu-foot">
+            <p class="menu-desc">{site.description}</p>
+            <a href="/about" class="menu-foot-link plain">关于本站</a>
+          </div>
+        </div>
+      </details>
+    </div>
   </div>
 </header>
 
+<script>
+  /*
+   * 原生 details 只负责开合，不会关。
+   * 点面板外或按 Esc 收起，是弹出式导航的基本预期。
+   */
+  const menu = document.querySelector<HTMLDetailsElement>('.menu');
+
+  if (menu) {
+    document.addEventListener('click', (event) => {
+      if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+      }
+    });
+  }
+</script>
+
 <style>
+  /*
+   * 顶栏半透明：底色只铺 80%，滚动时正文从下面透出来一层，
+   * 再由 blur 抹掉细节——读得清文字，又看得出页面在动。
+   * 饱和度略微拉高（1.6），否则白色背景下透过来的网格会发灰。
+   */
   .site-header {
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     position: sticky;
     top: 0;
     z-index: 40;
     /*
-     * 顶栏用实心底色：滚动时内容不会透过导航形成重影。
-     * 下方有分隔线区分边界，不需要半透明。
+     * 高度含边框：详情页两侧栏的 sticky top 只按 --nav-height 算，
+     * 顶栏若比它多出 1px 边框，滚动时栏目就会先滑 1px 再吸住。
      */
-    background: var(--bg);
+    box-sizing: border-box;
+    height: var(--nav-height);
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  }
+
+  /*
+   * 前缀版与标准版分开写：构建期的 CSS 压缩会把同一规则里的两条合并成
+   * 只剩 -webkit- 的那条，Firefox 就完全拿不到模糊，半透明底会糊成一片。
+   */
+  @supports (backdrop-filter: blur(1px)) {
+    .site-header {
+      backdrop-filter: blur(20px) saturate(1.6);
+    }
+  }
+
+  /* 不支持 backdrop-filter 时退回实心底色，否则半透明会糊成一片 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header {
+      background: var(--bg);
+    }
   }
 
   .header-inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    height: 64px;
+    gap: var(--space-5);
+    height: 100%;
   }
 
+  /* ---------- 品牌 ---------- */
   .brand {
-    font-family: var(--font-serif);
-    font-size: var(--text-lg);
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
     flex-shrink: 0;
-    /* 站点名就是首页入口：它没有独立的导航项，靠 hover 下划线说明可点 */
-    text-underline-offset: 5px;
-    transition: text-decoration-color var(--duration) var(--ease);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+    letter-spacing: -0.01em;
+    color: var(--fg);
   }
 
-  .brand:hover {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-decoration-color: var(--fg);
+  /* 6px 的小方块：技术感标记，比一个小图标更安静 */
+  .brand-mark {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 2px;
+    background: var(--fg);
+    transition: transform var(--duration) var(--ease);
   }
 
+  .brand:hover .brand-mark {
+    transform: rotate(45deg);
+  }
+
+  /*
+   * 品牌字用衬线体：汉字在宋体一侧有横细竖粗的对比，单字放大后
+   * 比无衬线的等宽笔画更像一个「字标」，而不是正文里的一行标题。
+   * 宋体在 22px 上横画偏细，会显得比导航还轻，所以补一层极细描边
+   * 把笔画补回同一视觉重量（描边宽度 < 0.5px，缩放后仍是锐利边缘）。
+   * 只作用于这一个字，导航与正文仍是无衬线。
+   */
+  .brand-name {
+    font-family: 'Source Han Serif SC', 'Noto Serif SC', 'STZhongsong', 'Songti SC',
+      'SimSun', STSong, 'Georgia', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    -webkit-text-stroke: 0.35px currentColor;
+  }
+
+  /* 窄屏顶栏更挤，字标跟着收一点，避免比导航高出一头 */
+  @media (max-width: 620px) {
+    .brand-name {
+      font-size: 1.15rem;
+    }
+  }
+
+  /* ---------- 主导航 ---------- */
   .nav {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-1);
+    min-width: 0;
   }
 
   .nav-link {
+    position: relative;
+    padding: 0.4em 0.6em;
+    border-radius: var(--radius-sm);
     font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
     color: var(--fg-muted);
-    transition: color var(--duration) var(--ease);
-    padding-block: 0.25em;
-    /* 极窄屏下不许把「文章」拆成「文 / 章」两行 */
     white-space: nowrap;
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
   }
 
   .nav-link:hover {
     color: var(--fg);
+    background: var(--bg-subtle);
   }
 
+  /*
+   * 激活项用浅底药丸标记。
+   * 试过在文字下方点一个 3px 圆点，它正好落在文字的「下沉部」与顶栏分隔线之间，
+   * 看着像一滴多余的墨，而不是状态标记。
+   */
   .nav-link.active {
     color: var(--fg);
-    font-weight: 500;
+    background: var(--bg-inset);
   }
 
-  .theme-toggle {
+  /* ---------- 右侧动作 ---------- */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    /* 比图标按钮更宽：看起来是个输入框，而不是又一个图标 */
+    min-width: 9.5rem;
+    height: 2rem;
+    padding-inline: 0.7em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--fg-faint);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: color var(--duration) var(--ease),
+      border-color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .search-btn:hover {
+    color: var(--fg);
+    border-color: var(--line-strong);
+    background: var(--bg-subtle);
+  }
+
+  .search-kbd {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: 1;
+    padding: 0.2em 0.35em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xs);
+    color: var(--fg-faint);
+    background: var(--bg-subtle);
+  }
+
+  .icon-btn {
     background: none;
     border: 0;
-    padding: 0.35em;
+    padding: 0.45em;
     cursor: pointer;
     color: var(--fg-muted);
     display: grid;
@@ -122,7 +323,7 @@ function isActive(href: string): boolean {
       background-color var(--duration) var(--ease);
   }
 
-  .theme-toggle:hover {
+  .icon-btn:hover {
     color: var(--fg);
     background: var(--bg-subtle);
   }
@@ -156,46 +357,183 @@ function isActive(href: string): boolean {
     }
   }
 
+  /* ---------- 窄屏菜单 ---------- */
+
+  .menu {
+    display: none;
+  }
+
+  .menu-btn {
+    list-style: none;
+  }
+
+  .menu-btn::-webkit-details-marker {
+    display: none;
+  }
+
+  .menu-open,
+  .menu-close {
+    display: grid;
+    place-items: center;
+  }
+
+  .menu-close {
+    display: none;
+  }
+
+  .menu[open] .menu-open {
+    display: none;
+  }
+
+  .menu[open] .menu-close {
+    display: grid;
+  }
+
   /*
-   * 窄屏：全部导航项都显示，靠缩小字号与间距适应。
-   * 实测 6 项在 14px/24px 间距下需 339px；390px 屏幕下（14px/12px）需 267px、可用 283px。
-   * 这已是顶栏容量上限——再加一项会在 390px 处零余量、320px 处放不下。
-   * 320px 实测：字号降到 12px、间距 0.6rem 时刚好单行放下（6 项合计约 132px）。
+   * 面板铺满整行、贴在顶栏下沿，并向下铺满剩余视口——窄屏上像翻开的目录页，
+   * 而不是一个悬在内容上的小气泡。
+   * 最近的定位祖先是 .site-header（sticky），所以 top:100% 正好是顶栏底边。
    */
-  @media (max-width: 720px) {
-    .nav {
-      gap: var(--space-2);
+  .menu-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    /*
+     * 铺满剩余视口。用 100%（而非 --nav-height）扣掉偏移量：顶栏下边框算在
+     * border-box 里，top:100% 落在 55px 而不是 56px，写死高度会在底部露 1px。
+     */
+    height: calc(100dvh - 100%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    /* 左右内边距与 .container 一致，菜单文字与顶栏 logo 对齐在同一条竖线上 */
+    padding: var(--space-2) var(--gutter) var(--space-6);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--bg);
+    box-shadow: 0 24px 48px -32px rgb(0 0 0 / 0.35);
+    animation: menu-in 140ms var(--ease);
+  }
+
+  .menu-nav {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .menu-foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: auto;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .menu-desc {
+    max-width: 34rem;
+    font-size: var(--text-xs);
+    line-height: var(--leading-ui);
+    color: var(--fg-faint);
+  }
+
+  .menu-foot-link {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  .menu-foot-link:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .menu-panel {
+      padding-inline: var(--space-4);
     }
-    .nav-link {
-      font-size: var(--text-sm);
+  }
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  /* 显式收起：作者样式里的 display 会盖掉浏览器对 details 内容的隐藏规则 */
+  .menu:not([open]) .menu-panel {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-panel {
+      animation: none;
+    }
+  }
+
+  .menu-link {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+    padding-inline: var(--space-2);
+    margin-inline: calc(var(--space-2) * -1);
+    border-radius: var(--radius);
+    font-size: var(--text-lg);
+    color: var(--fg-muted);
+    transition: color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .menu-link:hover {
+    color: var(--fg);
+    background: var(--bg-subtle);
+  }
+
+  .menu-link.active {
+    color: var(--fg);
+    font-weight: var(--weight-semi);
+  }
+
+  /*
+   * 窄屏策略：文字导航整列收进菜单，图标动作（社交 / 搜索 / 主题 / 菜单）留在栏内。
+   * 这样 320px 屏也只有四个图标，永远不会挤成两行。
+   */
+  @media (max-width: 880px) {
+    .nav {
+      display: none;
+    }
+    .menu {
+      display: block;
+    }
+    .header-inner {
+      gap: var(--space-3);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .search-label,
+    .search-kbd {
+      display: none;
+    }
+    .search-btn {
+      width: 2rem;
+      min-width: 0;
+      padding-inline: 0;
+      justify-content: center;
+    }
+    .header-inner {
+      gap: var(--space-2);
     }
   }
 
   @media (max-width: 520px) {
-    .header-inner {
-      height: 56px;
+    .brand {
+      font-size: var(--text-base);
     }
-    .nav {
-      gap: 0.75rem;
+    .icon-btn {
+      padding: 0.35em;
     }
-    .nav-link {
-      font-size: var(--text-sm);
-    }
-  }
-
-  /* 极窄屏（<360px）：进一步压缩，保证 6 项仍能一行放下 */
-  @media (max-width: 360px) {
-    .header-inner {
+    .header-actions {
       gap: var(--space-1);
-    }
-    .nav {
-      gap: 0.6rem;
-    }
-    .nav-link {
-      font-size: var(--text-xs);
-    }
-    .theme-toggle {
-      padding: 0.3em;
     }
   }
 </style>

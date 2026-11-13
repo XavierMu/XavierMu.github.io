@@ -1,0 +1,156 @@
+---
+/**
+ * 系列列表页。
+ *
+ * 扮演 gpui-kit 文档首页的角色：把散落的文章按「一个完整的问题」重新组织，
+ * 而不是按时间堆叠。对教程类内容来说，读者的需求是「把装机这四步走完」，
+ * 而不是「看 2024 年 1 月发了什么」。
+ */
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import SeriesCard from '../../components/SeriesCard.astro';
+import { sortByRecentlyUpdated, groupBySeries } from '../../utils/posts';
+import { seriesDefs } from '../../data/series';
+import { copy } from '../../data/site';
+
+const posts = sortByRecentlyUpdated(await getCollection('blog', ({ data }) => !data.draft));
+const groups = groupBySeries(posts, seriesDefs);
+
+// 独立文章：不属于任何系列的那些
+const inSeries = new Set(groups.flatMap((g) => g.posts.map((p) => p.id)));
+const standalone = posts.filter((p) => !inSeries.has(p.id));
+
+const totalMinutes = groups.reduce((n, g) => n + g.minutes, 0);
+---
+
+<Base title={copy.series.title} description={copy.series.description}>
+  <div class="container">
+    <PageHeader
+      title={copy.series.title}
+      kicker={copy.series.kicker}
+      description={copy.series.description}
+      meta={`${groups.length} 个系列 · ${totalMinutes} 分钟`}
+    />
+
+    {
+      groups.length === 0 ? (
+        <p class="muted empty">{copy.series.empty}</p>
+      ) : (
+        <div class="series-grid">
+          {groups.map((group) => (
+            <SeriesCard group={group} headingLevel={2} />
+          ))}
+        </div>
+      )
+    }
+
+    {
+      standalone.length > 0 && (
+        <section class="standalone">
+          <div class="standalone__head">
+            <p class="kicker">SINGLE</p>
+            <h2 class="standalone__title">独立文章</h2>
+            <p class="standalone__desc">不属于任何系列，单篇读完即可。</p>
+          </div>
+
+          <ul class="standalone__list">
+            {standalone.map((post) => (
+              <li>
+                <a href={`/blog/${post.id.replace(/\.(md|mdx)$/, '')}`} class="standalone__item plain">
+                  <span class="standalone__item-title">{post.data.title}</span>
+                  <span class="standalone__item-desc">{post.data.description}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <p class="back">
+      <a href="/blog" class="link-arrow plain">全部文章</a>
+      <a href="/" class="link-arrow plain">返回首页</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  .series-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+    gap: var(--space-4);
+  }
+
+  /* ---------- 独立文章 ---------- */
+  .standalone {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--line);
+  }
+
+  .standalone__head {
+    margin-bottom: var(--space-4);
+  }
+
+  .standalone__title {
+    margin-top: var(--space-2);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semi);
+    letter-spacing: var(--tracking-cjk);
+  }
+
+  .standalone__desc {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  .standalone__list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .standalone__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    height: 100%;
+    transition: border-color var(--duration) var(--ease),
+      background-color var(--duration) var(--ease);
+  }
+
+  .standalone__item:hover {
+    border-color: var(--line-strong);
+    background: var(--bg-subtle);
+  }
+
+  .standalone__item-title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+    line-height: 1.5;
+  }
+
+  .standalone__item-desc {
+    font-size: var(--text-xs);
+    line-height: 1.65;
+    color: var(--fg-muted);
+  }
+
+  .empty {
+    padding-block: var(--space-7);
+  }
+
+  .back {
+    display: flex;
+    gap: var(--space-5);
+    margin-top: var(--space-7);
+    font-size: var(--text-sm);
+  }
+</style>

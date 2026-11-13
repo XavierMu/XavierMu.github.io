@@ -1,17 +1,30 @@
 ---
 /**
- * 文章列表项。紧凑的「日期 + 标题 + 摘要」结构，不用卡片。
+ * 文章列表项。
+ *
+ * 结构：内容一列 + 右侧箭头。元信息（日期 / 时长 / 系列）压缩成标题上方的一行，
+ * 替掉原来独占一列的日期列——日期列占 6.5rem 却只放得下一串数字，是列表页最浪费的一栏。
  */
 import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import { entryReadingTime, slugOf } from '../utils/posts';
+import { visualForPost } from '../utils/tone';
+import { getSeriesDef } from '../data/series';
 
 interface Props {
   post: CollectionEntry<'blog'>;
   showDescription?: boolean;
+  /** 是否显示标签：首页关掉以免噪音过多 */
+  showTags?: boolean;
 }
 
-const { post, showDescription = true } = Astro.props;
-const { title, description, pubDate, updatedDate, draft } = post.data;
-const slug = post.id.replace(/\.(md|mdx)$/, '');
+const { post, showDescription = true, showTags = true } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, draft, series, seriesOrder } = post.data;
+
+const slug = slugOf(post.id);
+const visual = visualForPost(post);
+const seriesDef = getSeriesDef(series);
+const minutes = entryReadingTime(post);
 
 // 列表按「最近更新」排序，日期也要显示同一个口径，否则时间轴上看着是乱的
 const shownDate = updatedDate ?? pubDate;
@@ -31,102 +44,195 @@ const dateStr = fmtDate(shownDate);
 const pubDateStr = fmtDate(pubDate);
 ---
 
-<article class="post-item">
+<article class:list={['post-item', `tone-${visual.tone}`]}>
   <a href={`/blog/${slug}`} class="post-link plain">
-    <time
-      class="post-date mono"
-      datetime={shownDate.toISOString()}
-      title={isUpdated ? `首次发布 ${pubDateStr}` : undefined}
-    >
-      {dateStr}{isUpdated && <span class="post-updated">更新</span>}
-    </time>
     <div class="post-content">
-      {/* 列表项标题用 h3：它从属于所在区块的 h2（如「最近文章」「2026」） */}
+      <div class="post-meta mono">
+        <time datetime={shownDate.toISOString()} title={isUpdated ? `首次发布 ${pubDateStr}` : undefined}>
+          {dateStr}
+        </time>
+        <span class="post-dot" aria-hidden="true">·</span>
+        <span>{minutes} 分钟</span>
+        {
+          seriesDef && (
+            <>
+              <span class="post-dot" aria-hidden="true">·</span>
+              <span class="post-series">
+                {seriesDef.code}
+                {seriesOrder ? ` ${String(seriesOrder).padStart(2, '0')}` : ''}
+              </span>
+            </>
+          )
+        }
+        {isUpdated && <span class="badge post-updated">更新</span>}
+      </div>
+
       <h3 class="post-title">
         {title}
-        {draft && <span class="draft-badge">草稿</span>}
+        {draft && <span class="badge">草稿</span>}
       </h3>
-      {showDescription && description && <p class="post-desc muted">{description}</p>}
+
+      {showDescription && description && <p class="post-desc">{description}</p>}
+
+      {
+        showTags && tags.length > 0 && (
+          <ul class="post-tags">
+            {tags.slice(0, 4).map((tag) => (
+              <li class="tag">{tag}</li>
+            ))}
+          </ul>
+        )
+      }
     </div>
+
+    <span class="post-go" aria-hidden="true">
+      <Icon name="arrow-up-right" size={15} />
+    </span>
   </a>
 </article>
 
 <style>
-  .post-item {
-    border-bottom: 1px solid var(--line);
+  .post-item + .post-item {
+    border-top: 1px solid var(--line);
   }
 
-  .post-item:first-child {
-    border-top: 1px solid var(--line);
+  .post-item:last-child {
+    border-bottom: 1px solid var(--line);
   }
 
   .post-link {
     display: grid;
-    grid-template-columns: 7.5rem 1fr;
-    gap: var(--space-2);
-    padding-block: var(--space-2);
-    align-items: baseline;
-    transition: opacity var(--duration) var(--ease);
+    grid-template-columns: minmax(0, 1fr) 1.25rem;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+    padding-inline: var(--space-2);
+    margin-inline: calc(var(--space-2) * -1);
+    border-radius: var(--radius-card);
+    align-items: start;
+    transition: background-color var(--duration) var(--ease);
   }
 
-  .post-link:hover .post-title {
-    color: var(--fg-muted);
+  /* 悬停：整行浅底，比下划线更能表达「整块可点」 */
+  .post-link:hover {
+    background: var(--bg-subtle);
   }
 
-  .post-date {
-    font-size: var(--text-xs);
+  .post-content {
+    min-width: 0;
+  }
+
+  /* 元信息行：等宽小字，比分列更紧凑也更好扫 */
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--text-2xs);
     color: var(--fg-faint);
-    white-space: nowrap;
-    padding-top: 0.35em;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
   }
 
-  /* 「更新」标记：日期列宽度有限，用极小的角标，不做成胶囊 */
+  .post-dot {
+    color: var(--line-strong);
+  }
+
+  /* 系列编号用系列色，和左栏导航对得上 */
+  .post-series {
+    color: var(--tone);
+    font-weight: var(--weight-semi);
+    letter-spacing: 0.04em;
+  }
+
+  /*
+   * 「更新」标记：退成一枚淡字。
+   * 几乎每篇都改过，做成描边徽标会在列表里连成一片噪音。
+   */
   .post-updated {
-    margin-left: 0.45em;
-    padding: 0.05em 0.25em;
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    font-size: 0.85em;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
     color: var(--fg-faint);
-    vertical-align: 0.05em;
+    letter-spacing: 0.04em;
   }
 
   .post-title {
+    margin-top: 0.25em;
     font-size: var(--text-lg);
-    font-weight: 500;
-    font-family: var(--font-sans);
+    font-weight: var(--weight-semi);
     line-height: 1.45;
+    color: var(--fg);
+    word-break: keep-all;
+    text-wrap: pretty;
     transition: color var(--duration) var(--ease);
   }
 
   .post-desc {
-    font-size: var(--text-sm);
-    margin-top: 0.35em;
-    line-height: 1.6;
+    margin-top: 0.3em;
+    font-size: var(--text-md);
+    line-height: 1.7;
+    color: var(--fg-muted);
+    text-wrap: pretty;
   }
 
-  .draft-badge {
-    font-size: var(--text-xs);
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+    list-style: none;
+    padding: 0;
+    margin-top: 0.7em;
+  }
+
+  /* 列表里的标签只是信息，不能是链接——整行已经是 <a> 了 */
+  .post-tags .tag {
+    font-size: 0.6875rem;
+    padding: 0.1em 0.45em;
+  }
+
+  .post-go {
+    display: grid;
+    place-items: center;
     color: var(--fg-faint);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 0.1em 0.4em;
-    margin-left: 0.5em;
-    vertical-align: middle;
-    font-family: var(--font-sans);
-    font-weight: 400;
+    opacity: 0;
+    transform: translate(-3px, 3px);
+    padding-top: 0.35em;
+    transition: opacity var(--duration) var(--ease),
+      transform var(--duration) var(--ease), color var(--duration) var(--ease);
   }
 
-  @media (max-width: 640px) {
+  .post-link:hover .post-go {
+    opacity: 1;
+    transform: translate(0, 0);
+    color: var(--tone);
+  }
+
+  @media (hover: none) {
+    .post-go {
+      opacity: 0.45;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 720px) {
     .post-link {
-      grid-template-columns: 1fr;
-      gap: 0.25em;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+      padding-block: var(--space-4);
     }
-    .post-date {
-      padding-top: 0;
+
+    /* 窄屏去掉箭头列 */
+    .post-go {
+      display: none;
     }
+
     .post-title {
       font-size: var(--text-base);
+    }
+
+    .post-desc {
+      font-size: var(--text-sm);
     }
   }
 </style>

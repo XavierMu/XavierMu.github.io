@@ -16,97 +16,121 @@
       }
 
       body {
-        background: #fdfdfc;
-        color: #1a1a1a;
-        font-family: "Noto Serif SC", "Songti SC", "SimSun", Georgia, serif;
+        background: #ffffff;
+        color: #0a0a0a;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+          'PingFang SC', 'Microsoft YaHei', sans-serif;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 80px 88px;
+        padding: 72px 80px;
         position: relative;
+        overflow: hidden;
       }
 
-      /* 顶部细线，呼应站点气质 */
-      .rule {
+      /* 与站点同款的 64px 网格，放射状渐隐 */
+      .grid {
         position: absolute;
-        top: 0;
-        left: 88px;
-        right: 88px;
-        height: 1px;
-        background: #e5e4e2;
+        inset: 0;
+        background-image: linear-gradient(
+            to right,
+            rgba(10, 10, 10, 0.06) 1px,
+            transparent 1px
+          ),
+          linear-gradient(to bottom, rgba(10, 10, 10, 0.06) 1px, transparent 1px);
+        background-size: 64px 64px;
+        -webkit-mask-image: radial-gradient(115% 85% at 30% 0%, #000 15%, transparent 74%);
+        mask-image: radial-gradient(115% 85% at 30% 0%, #000 15%, transparent 74%);
       }
 
-      .brand {
-        font-size: 30px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
+      .inner {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
+      }
+
+      .top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 26px;
+        font-weight: 660;
+        letter-spacing: -0.01em;
+      }
+
+      .mark {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: #0a0a0a;
       }
 
       .main {
-        flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        gap: 28px;
+        gap: 24px;
+      }
+
+      .kicker {
+        font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #737373;
       }
 
       .title {
-        font-size: 76px;
-        font-weight: 600;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
+        font-size: 66px;
+        font-weight: 660;
+        line-height: 1.14;
+        letter-spacing: -0.022em;
+        max-width: 940px;
       }
 
       .desc {
-        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-        font-size: 28px;
-        color: #6b6b6b;
+        font-size: 26px;
+        color: #525252;
         line-height: 1.5;
-        max-width: 900px;
+        max-width: 880px;
       }
 
       .footer {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-        font-size: 22px;
-        color: #9e9e9e;
+        font-size: 20px;
+        color: #737373;
+        padding-top: 28px;
+        border-top: 1px solid #e5e5e5;
       }
 
       .url {
-        font-family: "Cascadia Code", Consolas, monospace;
-        font-size: 20px;
-      }
-
-      /* 右下角标记 */
-      .mark {
-        position: absolute;
-        right: 88px;
-        bottom: 78px;
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-        background: #1a1a1a;
-        color: #fdfdfc;
-        display: grid;
-        place-items: center;
-        font-size: 30px;
-        font-weight: 600;
+        font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+        font-size: 18px;
       }
     </style>
   </head>
   <body>
-    <div class="rule"></div>
-    <div class="brand">慕</div>
+    <div class="grid"></div>
+    <div class="inner">
+      <div class="top">
+        <span class="mark"></span>
+        <span>慕</span>
+      </div>
 
-    <div class="main">
-      <div class="title">记录折腾电脑和手机的过程</div>
-      <div class="desc">偶尔写点论文和实验。</div>
-    </div>
+      <div class="main">
+        <div class="kicker">{{KICKER}}</div>
+        <div class="title">{{TITLE}}</div>
+        <div class="desc">{{DESC}}</div>
+      </div>
 
-    <div class="footer">
-      <span class="url">xaviermu.github.io</span>
+      <div class="footer">
+        <span class="url">xaviermu.github.io</span>
+        <span>记录折腾电脑和手机的过程</span>
+      </div>
     </div>
   </body>
 </html>

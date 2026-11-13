@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import PageHeader from '../../../components/PageHeader.astro';
 import PostList from '../../../components/PostList.astro';
+import Icon from '../../../components/Icon.astro';
 import { sortByRecentlyUpdated } from '../../../utils/posts';
 import { copy } from '../../../data/site';
 
@@ -25,15 +26,24 @@ const posts = sortByRecentlyUpdated(
 
 <Base title={copy.tagPage.title(tag)} description={copy.tagPage.description(tag)}>
   <div class="container">
-    <PageHeader title={`#${tag}`} description={copy.tagPage.count(posts.length)} />
+    <PageHeader
+      title={`#${tag}`}
+      kicker={copy.tagPage.kicker}
+      description={copy.tagPage.description(tag)}
+      meta={copy.tagPage.count(posts.length)}
+    />
 
     <div class="post-list">
       {posts.map((post) => <PostList post={post} />)}
     </div>
 
     <p class="back">
-      <a href="/tags" class="plain muted">← 标签列表</a>
-      <a href="/blog" class="plain muted">← 全部文章</a>
+      <a href="/tags" class="link-arrow plain">
+        <Icon name="arrow" size={13} /> 标签列表
+      </a>
+      <a href="/blog" class="link-arrow plain">
+        <Icon name="arrow" size={13} /> 全部文章
+      </a>
     </p>
   </div>
 </Base>
@@ -42,8 +52,8 @@ const posts = sortByRecentlyUpdated(
   .back {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
+    gap: var(--space-5);
+    margin-top: var(--space-7);
     font-size: var(--text-sm);
   }
 </style>

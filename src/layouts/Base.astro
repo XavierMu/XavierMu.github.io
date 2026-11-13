@@ -7,6 +7,7 @@ import '../styles/tokens.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import SearchModal from '../components/SearchModal.astro';
 import { site } from '../data/site';
 
 interface Props {
@@ -75,7 +76,7 @@ const jsonLd = isHome
 ---
 
 <!doctype html>
-<html lang={site.lang} data-theme="light">
+<html lang={site.lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -84,6 +85,8 @@ const jsonLd = isHome
     {noindex && <meta name="robots" content="noindex, follow" />}
     <link rel="canonical" href={canonical} />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
 
     <!-- Open Graph -->
     <meta property="og:type" content={type} />
@@ -113,28 +116,38 @@ const jsonLd = isHome
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- 主题：首屏前同步执行，避免深色模式闪白 -->
+    <!--
+      主题：首屏前同步执行，避免深色模式闪白。
+      这里必须与下面切换脚本写同一套判断，否则「跟随系统」在切换过一次之后就失效。
+    -->
     <script is:inline>
       (function () {
+        var theme = 'light';
         try {
           var stored = localStorage.getItem('theme');
-          var theme =
-            stored ||
-            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-          document.documentElement.dataset.theme = theme;
+          if (stored === 'light' || stored === 'dark') {
+            theme = stored;
+          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            theme = 'dark';
+          }
         } catch (e) {}
+        document.documentElement.dataset.theme = theme;
       })();
     </script>
   </head>
 
-  <body>
+  <body id="top">
+    <a class="skip-link" href="#main">跳到主内容</a>
+
     <Header currentPath={currentPath} />
 
-    <main class="site-main">
+    <main class="site-main" id="main">
       <slot />
     </main>
 
     <Footer />
+
+    <SearchModal />
 
     <script>
       // 主题切换：写 localStorage 并同步 data-theme
@@ -157,12 +170,33 @@ const jsonLd = isHome
     <style>
       .site-main {
         flex: 1;
-        padding-block: var(--space-4) var(--space-5);
+        padding-block: var(--space-7) var(--space-8);
+      }
+
+      /* 跳过导航：仅在键盘聚焦时出现 */
+      .skip-link {
+        position: fixed;
+        top: var(--space-2);
+        left: var(--space-2);
+        z-index: 100;
+        padding: 0.5em 0.9em;
+        border-radius: var(--radius);
+        background: var(--fg);
+        color: var(--bg);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semi);
+        text-decoration: none;
+        transform: translateY(-200%);
+        transition: transform var(--duration) var(--ease);
+      }
+
+      .skip-link:focus-visible {
+        transform: translateY(0);
       }
 
       @media (max-width: 640px) {
         .site-main {
-          padding-block: var(--space-3) var(--space-4);
+          padding-block: var(--space-5) var(--space-7);
         }
       }
     </style>

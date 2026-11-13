@@ -4,6 +4,8 @@ description: "框架显示「已激活」，模块却毫无反应——九成是
 pubDate: 2023-12-06
 updatedDate: 2026-11-11
 tags: ["安卓", "搞机"]
+series: android-root
+seriesOrder: 2
 ---
 
 按照[上一篇](/blog/android-unlock-bl-kernelsu)走到这里，手里应该是一台解了 BL、装了 KernelSU、能正常 `su` 的机器。接下来装 LSPosed——但绝大多数人卡住的地方不是「怎么装」，而是「为什么装完不生效」。

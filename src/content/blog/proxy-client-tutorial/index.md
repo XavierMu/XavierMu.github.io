@@ -4,6 +4,8 @@ description: "装好只是开始。真正让人卡住的是三件事：系统代
 pubDate: 2024-03-20
 updatedDate: 2026-11-11
 tags: ["电脑", "网络代理"]
+series: network
+seriesOrder: 1
 ---
 
 本文以 **Clash Verge Rev** 为例。它的内核是 [mihomo](https://github.com/MetaCubeX/mihomo)（也就是以前的 Clash Meta），界面基于 [Tauri 2](https://tauri.app/) 写，是 zzzgydi/clash-verge 的延续分支，现在还在活跃维护——Clash for Windows 的作者 2023 年 11 月删库之后，这是 Windows 上最省事的选择。

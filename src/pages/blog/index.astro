@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostList from '../../components/PostList.astro';
+import Icon from '../../components/Icon.astro';
 import { copy } from '../../data/site';
 import { effectiveDate, sortByRecentlyUpdated } from '../../utils/posts';
 
@@ -21,51 +22,84 @@ const years = [...byYear.keys()].sort((a, b) => b - a);
 
 <Base title={copy.blog.title} description={copy.blog.description}>
   <div class="container">
-    <PageHeader title={copy.blog.title} description={copy.blog.count(posts.length)} />
+    <PageHeader
+      title={copy.blog.title}
+      kicker={copy.blog.kicker}
+      description={copy.blog.description}
+      meta={copy.blog.count(posts.length)}
+    />
 
     {
       posts.length === 0 ? (
         <p class="muted empty">{copy.blog.empty}</p>
       ) : (
-        years.map((year) => (
-          <section class="year-group">
-            <h2 class="year-heading mono">{year}</h2>
-            <div class="post-list">
-              {byYear.get(year)!.map((post) => (
-                <PostList post={post} />
-              ))}
-            </div>
-          </section>
-        ))
+        <div class="year-groups">
+          {years.map((year) => (
+            <section class="year-group">
+              <div class="year-head">
+                <h2 class="year-heading mono">{year}</h2>
+                <span class="year-count mono">{byYear.get(year)!.length} 篇</span>
+              </div>
+              <div class="post-list">
+                {byYear.get(year)!.map((post) => (
+                  <PostList post={post} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )
     }
 
     <p class="back">
-      <a href="/" class="plain muted">← 返回首页</a>
+      <a href="/" class="link-arrow plain">
+        <Icon name="arrow" size={13} /> 返回首页
+      </a>
     </p>
   </div>
 </Base>
 
 <style>
-  .year-group {
-    margin-bottom: var(--space-5);
+  .year-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
   }
 
-  .year-heading {
-    font-size: var(--text-sm);
-    font-weight: 400;
-    color: var(--fg-faint);
+  /* 年份用「等宽大字 + 右侧计数」横排，像一份年度小结 */
+  .year-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--line-strong);
     margin-bottom: var(--space-1);
-    letter-spacing: 0.05em;
+  }
+
+  /* 年份是分组的唯一锚点，放到 2xl 让它真正撑起一段节奏 */
+  .year-heading {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semi);
+    color: var(--fg);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .year-count {
+    font-size: var(--text-2xs);
+    color: var(--fg-faint);
   }
 
   .empty {
-    padding-block: var(--space-5);
+    padding-block: var(--space-7);
   }
 
   /* 与归档页、标签页、项目列表页保持同一套底部返回样式 */
   .back {
-    margin-top: var(--space-4);
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-7);
     font-size: var(--text-sm);
   }
 </style>

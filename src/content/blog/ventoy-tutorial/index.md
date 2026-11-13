@@ -1,9 +1,11 @@
-﻿---
+---
 title: "Ventoy 使用教程：一个 U 盘装下所有系统镜像"
 description: "它替代不了 PE，也挡不住 Secure Boot。但一个 U 盘装下所有系统这件事，确实只有它能干。"
 pubDate: 2024-04-18
 updatedDate: 2026-11-11
 tags: ["电脑", "系统安装", "启动盘"]
+series: install
+seriesOrder: 3
 ---
 
 [Rufus](https://rufus.ie/) 和 [微PE](https://www.wepe.com.cn/) 都有一个共同限制：一个 U 盘只能装一个系统。想再放一个 PE、

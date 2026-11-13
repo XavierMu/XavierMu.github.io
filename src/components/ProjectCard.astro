@@ -1,8 +1,13 @@
 ---
 /**
  * 项目卡片。首页用简洁版，列表页用完整版。
+ *
+ * 视觉沿用「卡片 + 发丝边框 + 悬停抬起」的语言；色调只作为 hover 时的强调色，
+ * 不再铺装饰图形——项目本来就没有截图可放。
  */
 import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import { visualFor } from '../utils/tone';
 
 interface Props {
   project: CollectionEntry<'projects'>;
@@ -19,28 +24,37 @@ const { project, variant = 'compact', headingLevel = 3 } = Astro.props;
 const { title, description, year, role, status, stack, repo, demo } = project.data;
 const slug = project.id.replace(/\.(md|mdx)$/, '');
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
+
+// 项目没有系列，用标题派生色调（标题唯一，保证相邻卡片不会撞色成一片）
+const visual = visualFor(undefined, title);
 ---
 
-<article class:list={['project-card', variant]}>
+<article class:list={['project-card', variant, `tone-${visual.tone}`]}>
   <a href={`/projects/${slug}`} class="card-link plain">
-    <div class="card-head">
-      <Heading class="card-title">{title}</Heading>
-      <span class="card-year mono">{year}</span>
+    <div class="card-body">
+      <div class="card-head">
+        <Heading class="card-title">{title}</Heading>
+        <span class="card-year mono">{year}</span>
+      </div>
+
+      <p class="card-desc">{description}</p>
+
+      {variant === 'full' && <p class="card-role">{role} · {status}</p>}
+
+      {
+        stack.length > 0 && (
+          <ul class="stack">
+            {stack.map((tech) => (
+              <li class="tag">{tech}</li>
+            ))}
+          </ul>
+        )
+      }
+
+      <span class="card-go" aria-hidden="true">
+        查看项目 <Icon name="arrow" size={13} />
+      </span>
     </div>
-
-    <p class="card-desc">{description}</p>
-
-    {variant === 'full' && <p class="card-role muted">{role} · {status}</p>}
-
-    {
-      stack.length > 0 && (
-        <ul class="stack">
-          {stack.map((tech) => (
-            <li class="stack-item mono">{tech}</li>
-          ))}
-        </ul>
-      )
-    }
   </a>
 
   {
@@ -48,12 +62,12 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
       <div class="card-links">
         {repo && (
           <a href={repo} class="ext-link plain" rel="noopener" target="_blank">
-            源码 ↗
+            <Icon name="github" size={13} /> 源码
           </a>
         )}
         {demo && (
           <a href={demo} class="ext-link plain" rel="noopener" target="_blank">
-            演示 ↗
+            <Icon name="link" size={13} /> 演示
           </a>
         )}
       </div>
@@ -63,23 +77,36 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
 
 <style>
   .project-card {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: var(--space-2);
-    background: var(--bg);
-    transition: border-color var(--duration) var(--ease);
+    position: relative;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    background: var(--bg-elevated);
+    overflow: hidden;
+    transition: border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease),
+      transform var(--duration) var(--ease);
   }
 
   .project-card:hover {
     border-color: var(--line-strong);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
   }
 
   .card-link {
     display: flex;
     flex-direction: column;
-    gap: 0.4em;
+    flex: 1;
+    text-decoration: none;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    padding: var(--space-5);
     flex: 1;
   }
 
@@ -87,65 +114,105 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .card-title {
-    font-size: var(--text-base);
-    /* 与文章列表项标题保持同一字重 */
-    font-weight: 500;
-    font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semi);
+    letter-spacing: var(--tracking-cjk);
+    line-height: 1.35;
   }
 
   .card-year {
     font-size: var(--text-xs);
     color: var(--fg-faint);
     flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
   }
 
   .card-desc {
-    font-size: var(--text-sm);
+    font-size: var(--text-md);
     color: var(--fg-muted);
-    line-height: 1.6;
+    line-height: 1.65;
+    text-wrap: pretty;
   }
 
   .card-role {
     font-size: var(--text-xs);
+    color: var(--fg-faint);
   }
 
   .stack {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4em;
+    gap: 0.3em;
     list-style: none;
     padding: 0;
-    margin-top: 0.3em;
+    margin-top: 0.15em;
   }
 
-  .stack-item {
-    /* 原来是 0.7rem（11.2px），比字号阶梯最小的 12px 还小，提回阶梯 */
+  /* 卡片底部的入口提示：默认淡，hover 时点亮并右移 */
+  .card-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-top: auto;
+    padding-top: var(--space-3);
     font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
     color: var(--fg-faint);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 0.1em 0.45em;
+    transition: color var(--duration) var(--ease);
+  }
+
+  .card-go svg {
+    transition: transform var(--duration) var(--ease);
+  }
+
+  .project-card:hover .card-go {
+    color: var(--tone);
+  }
+
+  .project-card:hover .card-go svg {
+    transform: translateX(3px);
   }
 
   .card-links {
     display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-    padding-top: var(--space-2);
-    border-top: 1px solid var(--line);
+    gap: var(--space-4);
+    margin-inline: var(--space-5);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--line-faint);
     font-size: var(--text-xs);
   }
 
   .ext-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
     color: var(--fg-muted);
     transition: color var(--duration) var(--ease);
   }
 
   .ext-link:hover {
     color: var(--fg);
+  }
+
+  /* 紧凑版：首页两列，信息密度更高 */
+  .compact .card-body {
+    padding: var(--space-4) var(--space-5);
+    gap: 0.4em;
+  }
+
+  .compact .card-title {
+    font-size: var(--text-base);
+  }
+
+  .compact .card-desc {
+    font-size: var(--text-sm);
+  }
+
+  .compact .card-go {
+    padding-top: var(--space-2);
   }
 </style>

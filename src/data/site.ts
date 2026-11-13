@@ -24,6 +24,8 @@ export const site = {
 
   hero: {
     title: '慕',
+    /** 首屏标题上方的状态标签文字 */
+    badge: '记录中 · 持续更新',
     // 以下两项为可选：留空字符串即不渲染
     subtitle: '',
     focus: '',
@@ -37,6 +39,7 @@ export const site = {
 
   nav: [
     { label: '文章', href: '/blog' },
+    { label: '系列', href: '/series' },
     { label: '归档', href: '/archive' },
     { label: '标签', href: '/tags' },
     { label: '项目', href: '/projects' },
@@ -57,6 +60,8 @@ export const site = {
  * 只收两类：**会变的**（页面 title/description，影响 SEO）和**会被复用的**
  * （归档的月份名、首页区块标题）。像「← 返回文章列表」这种绑死在单一语境的文案
  * 留在组件里就地可读，抽出来反而要在两个文件之间跳。
+ *
+ * `kicker` 是每个页面标题上方的等宽小标签，纯装饰性质，不参与 SEO。
  */
 export const copy = {
   home: {
@@ -69,6 +74,7 @@ export const copy = {
 
   blog: {
     title: '文章',
+    kicker: 'ARTICLES',
     description: '折腾电脑和手机的记录，偶尔也有论文和实验笔记。',
     count: (n: number) => `共 ${n} 篇`,
     empty: '还没有文章。',
@@ -76,6 +82,7 @@ export const copy = {
 
   archive: {
     title: '归档',
+    kicker: 'ARCHIVE',
     description: '全部文章，按时间排列。',
     count: (n: number) => `共 ${n} 篇`,
     empty: '还没有文章。',
@@ -90,35 +97,51 @@ export const copy = {
 
   tags: {
     title: '标签',
+    kicker: 'TAGS',
     description: '全部标签，按文章数量排序。',
     count: (n: number) => `共 ${n} 个`,
     empty: '还没有标签。',
     aside: { top: '最多使用', recent: '最近新增', note: '说明' },
-    note: '标签字号随文章数量变化。',
+    note: '色条长度表示该标签下的文章数量。',
   },
 
   projects: {
     title: '项目',
+    kicker: 'PROJECTS',
     description: '自己写的一些小工具。',
     count: (n: number) => `共 ${n} 个`,
     empty: '还没有项目。',
     aside: { stack: '技术栈', status: '状态', years: '年份' },
   },
 
+  series: {
+    title: '系列',
+    kicker: 'SERIES',
+    description: '把相关的文章按一条主线串起来。从第一篇读到最后，比东看一篇西看一篇省事。',
+    empty: '还没有系列。',
+    count: (n: number) => `${n} 个系列`,
+    /** 文章页左栏里「本系列」的标题 */
+    inSeries: '本系列',
+    chapter: (i: number, total: number) => `第 ${i} / ${total} 章`,
+  },
+
   tagPage: {
     title: (tag: string) => `标签：${tag}`,
+    kicker: 'TAG',
     description: (tag: string) => `标签「${tag}」下的全部文章。`,
     count: (n: number) => `共 ${n} 篇`,
   },
 
   search: {
     title: '搜索',
+    kicker: 'SEARCH',
     description: '站内搜索。',
     hint: '输入关键词搜索，支持中文。',
   },
 
   about: {
     title: '关于',
+    kicker: 'ABOUT',
     fallbackDescription: (author: string) => `${author}：记录折腾电脑和手机的过程。`,
     aside: { contact: '联系', site: '本站' },
   },
