@@ -2,7 +2,7 @@
 title: "科学上网教程：订阅、分流、TUN 与故障排查"
 description: "装好只是开始。真正让人卡住的是三件事：系统代理留在注册表里、TUN 要管理员权限、两个软件抢同一个开关。"
 pubDate: 2024-03-20
-updatedDate: 2026-11-11
+updatedDate: 2026-11-18
 tags: ["电脑", "网络代理"]
 series: network
 seriesOrder: 1
@@ -97,7 +97,7 @@ Windows 上还有一个 `fixed_webview2` 版本，把 WebView2 运行时打包�
 
 节点得从机场买。下面三个是我在用的，链接里带邀请码：
 
-- [赔钱机场](https://xn--mes358aby2apfg.com/register?code=0O5iNqBN&cover=sfw)——量足价低，日常刷网页看视频够用，我目前的主力
+- [赔钱机场](https://dash.pqjc.site/register?code=0O5iNqBN&cover=sfw)——量足价低，日常刷网页看视频够用，我目前的主力
 - [魔界.net](https://www.mojie.me/#/register?code=oCmKfVkU)
 - [WindyCloud](https://portal.passgfw.top/#/register?code=bjn7QEKe)
 
